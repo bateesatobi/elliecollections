@@ -19,6 +19,8 @@ export function AdminOrdersPage() {
   const [viewing, setViewing] = useState<Order | null>(null);
   const [updating, setUpdating] = useState<Order | null>(null);
   const [statusDraft, setStatusDraft] = useState<OrderStatus>('paid');
+  const [trackingNumber, setTrackingNumber] = useState('');
+  const [trackingCarrier, setTrackingCarrier] = useState('');
   const [refundId, setRefundId] = useState<string | null>(null);
   const [amount, setAmount] = useState('');
   const [note, setNote] = useState('Customer requested refund');
@@ -47,6 +49,8 @@ export function AdminOrdersPage() {
   const openUpdate = (o: Order) => {
     setUpdating(o);
     setStatusDraft(o.status);
+    setTrackingNumber(o.trackingNumber || '');
+    setTrackingCarrier(o.trackingCarrier || '');
   };
 
   return (
@@ -206,8 +210,15 @@ export function AdminOrdersPage() {
               </div>
             </div>
             <div className="full">
-              <span className="admin-detail-label">Delivery</span>
+              <span className="admin-detail-label">Fulfilment</span>
               <div className="admin-detail-value">
+                {viewing.fulfillmentMode === 'pickup' ? 'Shop pickup' : 'Delivery'}
+                {viewing.recipientName
+                  ? ` · ${viewing.recipientName}${
+                      viewing.recipientPhone ? ` (${viewing.recipientPhone})` : ''
+                    }`
+                  : ''}
+                <br />
                 {viewing.deliveryAddress}, {viewing.district}
               </div>
             </div>
@@ -225,6 +236,15 @@ export function AdminOrdersPage() {
               <span className="admin-detail-label">Reference</span>
               <div className="admin-detail-value">{viewing.paymentRef}</div>
             </div>
+            {(viewing.trackingNumber || viewing.trackingCarrier) && (
+              <div className="full">
+                <span className="admin-detail-label">Shipment tracking</span>
+                <div className="admin-detail-value">
+                  {viewing.trackingCarrier ? `${viewing.trackingCarrier} · ` : ''}
+                  {viewing.trackingNumber || '—'}
+                </div>
+              </div>
+            )}
             <div className="full">
               <span className="admin-detail-label">Items</span>
               {viewing.items.map((i) => (
@@ -278,7 +298,10 @@ export function AdminOrdersPage() {
               className="btn btn-primary"
               onClick={async () => {
                 if (!updating) return;
-                const err = await updateOrderStatus(updating.id, statusDraft);
+                const err = await updateOrderStatus(updating.id, statusDraft, {
+                  trackingNumber,
+                  trackingCarrier,
+                });
                 if (err) setError(err);
                 setUpdating(null);
               }}
@@ -300,6 +323,25 @@ export function AdminOrdersPage() {
               </option>
             ))}
           </select>
+        </div>
+        <div className="field">
+          <label>Carrier (optional)</label>
+          <input
+            value={trackingCarrier}
+            onChange={(e) => setTrackingCarrier(e.target.value)}
+            placeholder="e.g. Ellie Courier, Softvan, DHL"
+          />
+        </div>
+        <div className="field">
+          <label>Tracking number (optional)</label>
+          <input
+            value={trackingNumber}
+            onChange={(e) => setTrackingNumber(e.target.value)}
+            placeholder="Shown to the customer when shipped"
+          />
+          <p className="muted" style={{ margin: '6px 0 0', fontSize: 12 }}>
+            Add when status is shipped so the client can follow the parcel.
+          </p>
         </div>
       </AdminModal>
 

@@ -1,39 +1,42 @@
-# AgriSense Market
+# Elliecollections
 
-React marketplace for **produce** and **farm inputs**, with a separate **admin console**.
+Feminine fashion shopping platform — apparel & accessories — with a full admin console for catalogue uploads, orders, and revenue.
 
 ## Features
 
-### Client (guest-first)
-- Browse produce & farm inputs without signing in
-- Cart + checkout — **login/register only when paying**
-- Orders history after login
-- “Download app” page for scan / soil pH / yield / weather (not on web)
+### Client
+- Brand landing + shop browse (guest-friendly)
+- Product detail, bag, checkout (login/register at pay)
+- Pesapal / MoMo / card / cash on delivery
+- Order history & tracking
 
 ### Admin
-- Dashboard revenue & KPIs
-- Add / edit / delete produce & inputs
-- Manage order status
-- Refund payments
-- Manage users
-- Revenue & refund reports
-
-Data persists in `localStorage` (demo store).
+- Dashboard KPIs
+- Product CRUD with multi-image upload
+- Categories & units (fashion taxonomy)
+- Orders, refunds, users, revenue, disbursements
 
 ## Run
 
 ```bash
-cd agrisense-market
+cd elliecollections
 npm install
 npm run dev
 ```
 
-## Demo accounts
+Set API base URL in `.env`:
 
-| Role | Login | Password |
-|------|-------|----------|
-| Admin | `admin@agrisense.ug` | `admin123` |
-| Customer | `amina@example.com` | `farmer123` |
+```
+VITE_API_URL=https://elliecollections-api-latest.onrender.com
+```
 
-Admin: http://localhost:5173/admin/login  
-Store: http://localhost:5173/
+For local backend instead: `VITE_API_URL=http://localhost:8000`
+## Backend
+
+```bash
+cd agrobackend
+# uses config/wigi-64fa5-firebase-adminsdk-*.json
+uvicorn main:app --reload --port 8000
+```
+
+Default admin: `admin@elliecollections.com` / `admin123`

@@ -6,6 +6,16 @@ import {
   type PesapalMethod,
 } from '../../services/pesapal';
 import { formatUgx, useMarket } from '../../store/MarketStore';
+import { useCurrency } from '../../store/CurrencyStore';
+import type { FulfillmentMode } from '../../types';
+import { Seo } from '../../components/Seo';
+
+const SHOP = {
+  name: 'Elliecollections Boutique',
+  address: 'Plot 12, Acacia Avenue, Kololo',
+  location: 'Kampala',
+  hours: 'Mon–Sat 9:00–18:00 · Sun 10:00–16:00',
+};
 
 export function CheckoutPage() {
   const navigate = useNavigate();
@@ -18,6 +28,7 @@ export function CheckoutPage() {
     registerCustomer,
     placeOrder,
   } = useMarket();
+  const { formatMoney, currency } = useCurrency();
 
   const [mode, setMode] = useState<'login' | 'register'>('login');
   const [authError, setAuthError] = useState<string | null>(null);
@@ -27,6 +38,7 @@ export function CheckoutPage() {
   const [successMethod, setSuccessMethod] = useState<string | null>(null);
   const [successTotal, setSuccessTotal] = useState<number | null>(null);
   const [successCash, setSuccessCash] = useState(false);
+  const [successFulfillment, setSuccessFulfillment] = useState<FulfillmentMode>('delivery');
   const [paying, setPaying] = useState(false);
 
   const [loginForm, setLoginForm] = useState({ id: '', password: '' });
@@ -36,7 +48,15 @@ export function CheckoutPage() {
     phone: '',
     password: '',
   });
-  const [delivery, setDelivery] = useState({ address: '', district: '' });
+
+  const [fulfillment, setFulfillment] = useState<FulfillmentMode>('delivery');
+  const [recipient, setRecipient] = useState({
+    name: '',
+    phone: '',
+    address: '',
+    location: '',
+  });
+
   const [payMethod, setPayMethod] = useState<PesapalMethod>('mtn');
   const [momoPhone, setMomoPhone] = useState('');
   const [card, setCard] = useState({
@@ -47,8 +67,15 @@ export function CheckoutPage() {
   });
 
   useEffect(() => {
-    if (customer?.phone) setMomoPhone((prev) => prev || customer.phone);
-  }, [customer?.phone]);
+    if (!customer) return;
+    setRecipient((prev) => ({
+      name: prev.name || customer.name || '',
+      phone: prev.phone || customer.phone || '',
+      address: prev.address,
+      location: prev.location,
+    }));
+    setMomoPhone((prev) => prev || customer.phone);
+  }, [customer]);
 
   if (!cart.length && !successId) {
     return (
@@ -66,21 +93,40 @@ export function CheckoutPage() {
       <div className="container section">
         <div className="panel" style={{ maxWidth: 560 }}>
           <div className="alert alert-ok">
-            {successCash ? 'Order placed — pay cash on delivery' : 'Pesapal payment completed'}
+            {successCash
+              ? successFulfillment === 'pickup'
+                ? 'Order placed — pay in cash at the shop'
+                : 'Order placed — pay cash on delivery'
+              : 'Pesapal payment completed'}
           </div>
           <h2>Order {successId}</h2>
           <p className="muted" style={{ marginBottom: 8 }}>
             {successCash ? (
               <>
-                Pay <strong>{successTotal != null ? formatUgx(successTotal) : ''}</strong> in cash
-                when your order arrives ({successMethod}).
+                Pay <strong>{successTotal != null ? formatMoney(successTotal) : ''}</strong> in cash
+                {successFulfillment === 'pickup'
+                  ? ' when you collect at the boutique'
+                  : ' when your order arrives'}{' '}
+                ({successMethod}).
+                {currency.code !== 'UGX' && successTotal != null ? (
+                  <> · {formatUgx(successTotal)} charged</>
+                ) : null}
               </>
             ) : (
               <>
                 Paid with <strong>{successMethod}</strong>
-                {successTotal != null ? <> · {formatUgx(successTotal)}</> : null}
+                {successTotal != null ? <> · {formatMoney(successTotal)}</> : null}
+                {currency.code !== 'UGX' && successTotal != null ? (
+                  <> ({formatUgx(successTotal)})</>
+                ) : null}
               </>
             )}
+          </p>
+          <p className="muted">
+            Fulfilment:{' '}
+            <strong>
+              {successFulfillment === 'pickup' ? 'Shop pickup' : 'Home delivery'}
+            </strong>
           </p>
           <p className="muted">
             Reference: <strong>{successRef}</strong>
@@ -104,7 +150,8 @@ export function CheckoutPage() {
     );
   }
 
-  const deliveryFee = cartTotal >= 200000 ? 0 : 15000;
+  const deliveryFee =
+    fulfillment === 'pickup' ? 0 : cartTotal >= 200000 ? 0 : 15000;
   const total = cartTotal + deliveryFee;
 
   const onLogin = async (e: FormEvent) => {
@@ -121,6 +168,18 @@ export function CheckoutPage() {
     e.preventDefault();
     if (!customer || paying) return;
     setOrderError(null);
+
+    if (!recipient.name.trim() || !recipient.phone.trim()) {
+      setOrderError('Enter the recipient name and phone number.');
+      return;
+    }
+    if (fulfillment === 'delivery') {
+      if (!recipient.address.trim() || !recipient.location.trim()) {
+        setOrderError('Enter the delivery address and location / district.');
+        return;
+      }
+    }
+
     setPaying(true);
 
     try {
@@ -134,7 +193,7 @@ export function CheckoutPage() {
         cardExpiry: card.expiry,
         cardCvv: card.cvv,
         customerEmail: customer.email,
-        description: `AgriSense order (${cart.length} lines)`,
+        description: `Elliecollections order (${cart.length} lines)`,
       });
 
       if (charged.ok === false) {
@@ -142,13 +201,23 @@ export function CheckoutPage() {
         return;
       }
 
+      const deliveryAddress =
+        fulfillment === 'pickup'
+          ? `${SHOP.name} — ${SHOP.address}`
+          : recipient.address.trim();
+      const district =
+        fulfillment === 'pickup' ? SHOP.location : recipient.location.trim();
+
       const result = await placeOrder({
-        deliveryAddress: delivery.address,
-        district: delivery.district,
+        deliveryAddress,
+        district,
         paymentRef: charged.paymentRef,
         paymentMethod: charged.method,
         paymentTrackingId: charged.trackingId,
         merchantReference: charged.merchantReference,
+        fulfillmentMode: fulfillment,
+        recipientName: recipient.name.trim(),
+        recipientPhone: recipient.phone.trim(),
       });
 
       if (result.ok === false) {
@@ -161,6 +230,7 @@ export function CheckoutPage() {
       setSuccessMethod(charged.methodLabel);
       setSuccessTotal(result.order.totalUgx);
       setSuccessCash(charged.payOnDelivery);
+      setSuccessFulfillment(fulfillment);
       navigate('/checkout', { replace: true });
     } finally {
       setPaying(false);
@@ -169,8 +239,11 @@ export function CheckoutPage() {
 
   return (
     <div className="container section">
+      <Seo title="Checkout" path="/checkout" noIndex />
       <h2>Checkout</h2>
-      <p className="muted">Sign in or create an account to pay — required only at this step.</p>
+      <p className="muted">
+        Sign in, choose delivery or shop pickup, then pay with Pesapal or cash.
+      </p>
 
       <div className="amz-checkout-grid">
         <div className="panel">
@@ -211,14 +284,14 @@ export function CheckoutPage() {
                       type="password"
                       value={loginForm.password}
                       onChange={(e) => setLoginForm({ ...loginForm, password: e.target.value })}
-                      placeholder="farmer123"
+                      placeholder="shop123"
                     />
                   </div>
                   <button type="submit" className="btn btn-primary">
-                    Continue to payment
+                    Continue to fulfilment
                   </button>
                   <p className="muted" style={{ marginTop: 10, fontSize: 13 }}>
-                    Demo: amina@example.com / farmer123
+                    Demo: amina@example.com / shop123
                   </p>
                 </form>
               ) : (
@@ -265,31 +338,95 @@ export function CheckoutPage() {
                 Signed in as {customer.name} ({customer.phone})
               </div>
               {orderError && <div className="alert alert-error">{orderError}</div>}
+
+              <h3 style={{ margin: '0 0 0.65rem', fontSize: '1.05rem' }}>How will you receive it?</h3>
+              <div className="chip-row" style={{ marginBottom: 14 }}>
+                <button
+                  type="button"
+                  className={`chip ${fulfillment === 'delivery' ? 'active' : ''}`}
+                  disabled={paying}
+                  onClick={() => setFulfillment('delivery')}
+                >
+                  Deliver to address
+                </button>
+                <button
+                  type="button"
+                  className={`chip ${fulfillment === 'pickup' ? 'active' : ''}`}
+                  disabled={paying}
+                  onClick={() => setFulfillment('pickup')}
+                >
+                  Pick up from shop
+                </button>
+              </div>
+
+              <h3 style={{ margin: '0 0 0.65rem', fontSize: '1.05rem' }}>
+                {fulfillment === 'pickup' ? 'Who is collecting?' : 'Who is receiving?'}
+              </h3>
               <div className="field">
-                <label>Delivery address</label>
+                <label>Full name</label>
                 <input
-                  value={delivery.address}
-                  onChange={(e) => setDelivery({ ...delivery, address: e.target.value })}
-                  placeholder="Trading centre / village"
+                  value={recipient.name}
+                  onChange={(e) => setRecipient({ ...recipient, name: e.target.value })}
+                  placeholder="Recipient full name"
                   required
                   disabled={paying}
                 />
               </div>
               <div className="field">
-                <label>District</label>
+                <label>Phone</label>
                 <input
-                  value={delivery.district}
-                  onChange={(e) => setDelivery({ ...delivery, district: e.target.value })}
-                  placeholder="Tororo"
+                  value={recipient.phone}
+                  onChange={(e) => setRecipient({ ...recipient, phone: e.target.value })}
+                  placeholder="0772 123 456"
+                  inputMode="tel"
                   required
                   disabled={paying}
                 />
               </div>
 
+              {fulfillment === 'delivery' ? (
+                <>
+                  <div className="field">
+                    <label>Delivery address</label>
+                    <input
+                      value={recipient.address}
+                      onChange={(e) => setRecipient({ ...recipient, address: e.target.value })}
+                      placeholder="Street, building, landmark"
+                      required
+                      disabled={paying}
+                    />
+                  </div>
+                  <div className="field">
+                    <label>Location / district</label>
+                    <input
+                      value={recipient.location}
+                      onChange={(e) => setRecipient({ ...recipient, location: e.target.value })}
+                      placeholder="Kampala, Ntinda, Tororo…"
+                      required
+                      disabled={paying}
+                    />
+                  </div>
+                </>
+              ) : (
+                <div className="alert alert-ok" style={{ marginBottom: 14 }}>
+                  <strong>{SHOP.name}</strong>
+                  <div style={{ marginTop: 4 }}>
+                    {SHOP.address}, {SHOP.location}
+                  </div>
+                  <div className="muted" style={{ marginTop: 4, fontSize: 13 }}>
+                    {SHOP.hours}
+                  </div>
+                  <p className="muted" style={{ margin: '8px 0 0', fontSize: 12 }}>
+                    Bring your order reference and a matching ID / phone when collecting.
+                  </p>
+                </div>
+              )}
+
               <PesapalPaymentPicker
                 value={payMethod}
                 onChange={setPayMethod}
                 disabled={paying}
+                fulfillmentMode={fulfillment}
               />
 
               {payMethod === 'mtn' || payMethod === 'airtel' ? (
@@ -360,8 +497,9 @@ export function CheckoutPage() {
                 </>
               ) : (
                 <div className="alert alert-ok" style={{ marginBottom: 12 }}>
-                  Have exact cash ready for the delivery agent. Your order is confirmed now; payment
-                  is collected on arrival.
+                  {fulfillment === 'pickup'
+                    ? 'Have exact cash ready when you collect at the boutique. Your order is confirmed now.'
+                    : 'Have exact cash ready for the delivery agent. Your order is confirmed now; payment is collected on arrival.'}
                 </div>
               )}
 
@@ -373,14 +511,22 @@ export function CheckoutPage() {
               >
                 {paying
                   ? payMethod === 'cash'
-                    ? 'Confirming cash order…'
+                    ? 'Confirming order…'
                     : payMethod === 'card'
                       ? 'Processing card with Pesapal…'
                       : 'Waiting for Pesapal MoMo approval…'
                   : payMethod === 'cash'
-                    ? `Place order · Pay ${formatUgx(total)} cash on delivery`
-                    : `Pay ${formatUgx(total)} with Pesapal`}
+                    ? fulfillment === 'pickup'
+                      ? `Place order · Pay ${formatMoney(total)} at shop`
+                      : `Place order · Pay ${formatMoney(total)} on delivery`
+                    : `Pay ${formatMoney(total)} with Pesapal`}
               </button>
+              {currency.code !== 'UGX' ? (
+                <p className="muted" style={{ marginTop: 10, fontSize: 12 }}>
+                  Displayed as {currency.flag} {currency.code} ({currency.country}). Settlement and
+                  Pesapal charge: {formatUgx(total)}.
+                </p>
+              ) : null}
             </form>
           )}
         </div>
@@ -392,7 +538,7 @@ export function CheckoutPage() {
             if (!p) return null;
             return (
               <div
-                key={line.productId}
+                key={`${line.productId}-${line.size || 'default'}`}
                 style={{
                   display: 'flex',
                   justifyContent: 'space-between',
@@ -402,20 +548,29 @@ export function CheckoutPage() {
                 }}
               >
                 <span>
-                  {p.title} × {line.quantity}
+                  {p.title}
+                  {line.size ? ` · ${line.size}` : ''} × {line.quantity}
                 </span>
-                <strong>{formatUgx(p.priceUgx * line.quantity)}</strong>
+                <strong>{formatMoney(p.priceUgx * line.quantity)}</strong>
               </div>
             );
           })}
           <div style={{ marginTop: 12 }} className="muted">
-            Delivery: {deliveryFee === 0 ? 'Free' : formatUgx(deliveryFee)}
+            {fulfillment === 'pickup'
+              ? 'Pickup: Free'
+              : `Delivery: ${deliveryFee === 0 ? 'Free' : formatMoney(deliveryFee)}`}
           </div>
           <div className="price" style={{ marginTop: 6 }}>
-            {formatUgx(total)}
+            {formatMoney(total)}
           </div>
+          {currency.code !== 'UGX' ? (
+            <p className="muted" style={{ marginTop: 8, fontSize: 12 }}>
+              ≈ {formatUgx(total)} · rates for {currency.country}
+            </p>
+          ) : null}
           <p className="muted" style={{ marginTop: 14, fontSize: 12 }}>
-            Pay with Pesapal (MTN MoMo, Airtel Money, or card) or choose cash on delivery.
+            Pay online with Pesapal (MTN MoMo, Airtel Money, or card), or pay in cash on delivery /
+            at the shop.
           </p>
         </aside>
       </div>

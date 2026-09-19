@@ -206,7 +206,7 @@ export function AdminDisbursementsPage() {
           <div>
             <h3 style={{ margin: 0 }}>Ready to disburse</h3>
             <p className="muted" style={{ margin: '0.35rem 0 0' }}>
-              Online seller balances awaiting AgriSense payout
+              Online seller balances awaiting Elliecollections payout
             </p>
           </div>
           <button
@@ -256,7 +256,7 @@ export function AdminDisbursementsPage() {
                 <tr>
                   <td colSpan={8}>
                     <div className="empty">
-                      No online seller balances ready. New paid produce/input orders will appear
+                      No online seller balances ready. New paid apparel/accessories orders will appear
                       here.
                     </div>
                   </td>

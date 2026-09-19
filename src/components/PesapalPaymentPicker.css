@@ -6,16 +6,25 @@
 
 .pesa-brand {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   justify-content: space-between;
   gap: 8px;
 }
 
 .pesa-mark {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
   font-weight: 800;
   letter-spacing: 0.02em;
   color: #0b4f8a;
   font-size: 15px;
+}
+
+.pesa-secure-icon {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
 }
 
 .pesa-secure {
@@ -29,8 +38,9 @@
 }
 
 .pesa-option {
-  display: flex;
-  align-items: flex-start;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
   gap: 12px;
   text-align: left;
   width: 100%;
@@ -39,7 +49,7 @@
   border: 1.5px solid #d5d9d9;
   background: #fff;
   cursor: pointer;
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
 }
 
 .pesa-option:hover:not(:disabled) {
@@ -56,10 +66,24 @@
   box-shadow: 0 0 0 1px #2e7d32;
 }
 
+.pesa-logo-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.pesa-logo {
+  width: 52px;
+  height: 34px;
+  display: block;
+  border-radius: 6px;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.12);
+}
+
 .pesa-radio {
   width: 18px;
   height: 18px;
-  margin-top: 2px;
   border-radius: 50%;
   border: 2px solid #879596;
   flex-shrink: 0;
@@ -81,6 +105,7 @@
 .pesa-copy {
   display: grid;
   gap: 2px;
+  min-width: 0;
 }
 
 .pesa-copy strong {
@@ -110,8 +135,38 @@
   background: linear-gradient(90deg, #f3faf3, #fff);
 }
 
+.pesa-accepted {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.45rem;
+  padding-top: 2px;
+  font-size: 11px;
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.pesa-mini {
+  width: 36px;
+  height: 24px;
+  border-radius: 4px;
+  box-shadow: 0 1px 1px rgba(15, 23, 42, 0.1);
+}
+
 .pesa-card-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 10px;
+}
+
+@media (max-width: 480px) {
+  .pesa-logo {
+    width: 46px;
+    height: 30px;
+  }
+
+  .pesa-option {
+    padding: 10px 12px;
+    gap: 10px;
+  }
 }

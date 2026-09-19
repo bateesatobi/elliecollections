@@ -1,0 +1,136 @@
+.ec-promo-banner {
+  position: relative;
+  min-height: 220px;
+  margin: 0 0 1.5rem;
+  overflow: hidden;
+  color: #fff;
+  display: grid;
+  align-items: center;
+}
+
+.ec-promo-bg {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+  transform: scale(1.05);
+}
+
+.ec-promo-bg-fallback {
+  background:
+    radial-gradient(circle at 20% 20%, rgba(212, 165, 165, 0.55), transparent 45%),
+    linear-gradient(120deg, #2a2126, #1c1418 55%, #3a2a30);
+}
+
+.ec-promo-veil {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, rgba(28, 20, 24, 0.78), rgba(28, 20, 24, 0.35));
+}
+
+.ec-promo-copy {
+  position: relative;
+  z-index: 1;
+  width: min(720px, calc(100% - 2.5rem));
+  margin: 2rem auto;
+  padding: 0.5rem 0;
+}
+
+.ec-promo-chip {
+  display: inline-block;
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  background: rgba(255, 255, 255, 0.16);
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  padding: 0.3rem 0.65rem;
+  margin-bottom: 0.75rem;
+}
+
+.ec-promo-copy h2 {
+  margin: 0 0 0.45rem;
+  font-family: var(--display);
+  font-size: clamp(1.7rem, 3.5vw, 2.5rem);
+  font-weight: 600;
+}
+
+.ec-promo-copy p {
+  margin: 0 0 1rem;
+  max-width: 42ch;
+  color: rgba(255, 255, 255, 0.88);
+}
+
+.ec-promo-dots {
+  position: absolute;
+  right: 1.25rem;
+  bottom: 1rem;
+  z-index: 2;
+  display: flex;
+  gap: 0.4rem;
+}
+
+.ec-promo-dots button {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  border: none;
+  background: rgba(255, 255, 255, 0.35);
+  cursor: pointer;
+  padding: 0;
+}
+
+.ec-promo-dots button.active {
+  background: #fff;
+  width: 18px;
+}
+
+.anim-slide {
+  animation: promoSlide 0.7s ease both;
+}
+
+.anim-fade {
+  animation: promoFade 0.85s ease both;
+}
+
+.anim-marquee .ec-promo-copy h2 {
+  animation: promoMarquee 12s linear infinite;
+  white-space: nowrap;
+  display: inline-block;
+  min-width: 100%;
+}
+
+@keyframes promoSlide {
+  from {
+    opacity: 0;
+    transform: translateX(28px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes promoFade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes promoMarquee {
+  0% {
+    transform: translateX(8%);
+  }
+  100% {
+    transform: translateX(-60%);
+  }
+}
+
+@media (max-width: 720px) {
+  .ec-promo-banner {
+    min-height: 200px;
+  }
+}

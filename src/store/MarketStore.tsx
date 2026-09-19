@@ -23,8 +23,9 @@ import type {
   SessionUser,
   User,
 } from '../types';
+import { effectiveMinOrderQty, unitPriceForQty } from '../utils/pricing';
 
-const CART_KEY = 'agrisense_market_cart_v1';
+const CART_KEY = 'ellie_market_cart_v1';
 
 type MarketContextValue = {
   products: Product[];
@@ -37,9 +38,9 @@ type MarketContextValue = {
   cartTotal: number;
   loading: boolean;
   refreshCatalog: () => Promise<void>;
-  addToCart: (productId: string, qty?: number) => void;
-  setCartQty: (productId: string, qty: number) => void;
-  removeFromCart: (productId: string) => void;
+  addToCart: (productId: string, qty?: number, size?: string) => void;
+  setCartQty: (productId: string, qty: number, size?: string) => void;
+  removeFromCart: (productId: string, size?: string) => void;
   clearCart: () => void;
   loginCustomer: (emailOrPhone: string, password: string) => Promise<string | null>;
   registerCustomer: (data: {
@@ -62,12 +63,19 @@ type MarketContextValue = {
     paymentMethod: PaymentMethod;
     paymentTrackingId?: string;
     merchantReference?: string;
+    fulfillmentMode?: 'delivery' | 'pickup';
+    recipientName?: string;
+    recipientPhone?: string;
   }) => Promise<{ ok: true; order: Order } | { ok: false; error: string }>;
   upsertProduct: (
     product: Omit<Product, 'createdAt' | 'updatedAt'> & { createdAt?: string },
   ) => Promise<string | null>;
   deleteProduct: (id: string) => Promise<string | null>;
-  updateOrderStatus: (id: string, status: OrderStatus) => Promise<string | null>;
+  updateOrderStatus: (
+    id: string,
+    status: OrderStatus,
+    opts?: { trackingNumber?: string; trackingCarrier?: string },
+  ) => Promise<string | null>;
   refundOrder: (id: string, amountUgx: number, note: string) => Promise<string | null>;
   upsertUser: (user: User) => Promise<string | null>;
   deleteUser: (id: string) => Promise<string | null>;
@@ -171,39 +179,70 @@ export function MarketProvider({ children }: { children: ReactNode }) {
   const cartCount = cart.reduce((s, l) => s + l.quantity, 0);
   const cartTotal = cart.reduce((s, l) => {
     const p = productsById.get(l.productId);
-    return s + (p ? p.priceUgx * l.quantity : 0);
+    if (!p) return s;
+    const unit = unitPriceForQty(
+      p.priceUgx,
+      l.quantity,
+      p.bulkDiscountPercent,
+      p.bulkDiscountQty,
+    );
+    return s + unit * l.quantity;
   }, 0);
 
-  const addToCart = useCallback((productId: string, qty = 1) => {
+  const addToCart = useCallback((productId: string, qty = 1, size?: string) => {
     setCart((prev) => {
       const product = products.find((p) => p.id === productId && p.active);
       if (!product) return prev;
-      const existing = prev.find((c) => c.productId === productId);
-      const nextQty = (existing?.quantity ?? 0) + qty;
+      const minQty = effectiveMinOrderQty(product);
+      const sizeKey = size || undefined;
+      const existing = prev.find(
+        (c) => c.productId === productId && (c.size || undefined) === sizeKey,
+      );
+      const addQty = existing ? qty : Math.max(qty, minQty);
+      const nextQty = (existing?.quantity ?? 0) + addQty;
       if (nextQty > product.stock) return prev;
+      if (nextQty < minQty) return prev;
       return existing
-        ? prev.map((c) => (c.productId === productId ? { ...c, quantity: nextQty } : c))
-        : [...prev, { productId, quantity: qty }];
+        ? prev.map((c) =>
+            c.productId === productId && (c.size || undefined) === sizeKey
+              ? { ...c, quantity: nextQty }
+              : c,
+          )
+        : [...prev, { productId, quantity: addQty, size: sizeKey }];
     });
   }, [products]);
 
   const setCartQty = useCallback(
-    (productId: string, qty: number) => {
+    (productId: string, qty: number, size?: string) => {
       setCart((prev) => {
         const product = products.find((p) => p.id === productId);
         if (!product) return prev;
-        if (qty <= 0) return prev.filter((c) => c.productId !== productId);
+        const minQty = effectiveMinOrderQty(product);
+        const sizeKey = size || undefined;
+        if (qty <= 0) {
+          return prev.filter(
+            (c) => !(c.productId === productId && (c.size || undefined) === sizeKey),
+          );
+        }
+        if (qty < minQty) return prev;
         const capped = Math.min(qty, product.stock);
         return prev.map((c) =>
-          c.productId === productId ? { ...c, quantity: capped } : c,
+          c.productId === productId && (c.size || undefined) === sizeKey
+            ? { ...c, quantity: capped }
+            : c,
         );
       });
     },
     [products],
   );
 
-  const removeFromCart = useCallback((productId: string) => {
-    setCart((prev) => prev.filter((c) => c.productId !== productId));
+  const removeFromCart = useCallback((productId: string, size?: string) => {
+    const sizeKey = size || undefined;
+    setCart((prev) =>
+      prev.filter(
+        (c) => !(c.productId === productId && (c.size || undefined) === sizeKey),
+      ),
+    );
   }, []);
 
   const clearCart = useCallback(() => setCart([]), []);
@@ -228,11 +267,14 @@ export function MarketProvider({ children }: { children: ReactNode }) {
         return 'Fill all fields. Password must be at least 6 characters.';
       }
       try {
-        const token = await marketApi.register(data);
+        const { getStoredReferral, clearStoredReferral } = await import('../utils/referral');
+        const referredBy = getStoredReferral() || undefined;
+        const token = await marketApi.register({ ...data, referredBy });
         const me = await marketApi.me(token);
         setCustomerToken(token);
         setCustomer(me);
         setOrders([]);
+        if (referredBy) clearStoredReferral();
         return null;
       } catch (e) {
         return e instanceof Error ? e.message : 'Registration failed.';
@@ -287,20 +329,39 @@ export function MarketProvider({ children }: { children: ReactNode }) {
       paymentMethod: PaymentMethod;
       paymentTrackingId?: string;
       merchantReference?: string;
+      fulfillmentMode?: 'delivery' | 'pickup';
+      recipientName?: string;
+      recipientPhone?: string;
     }) => {
       const token = getCustomerToken();
       if (!customer || !token) return { ok: false as const, error: 'Login required to checkout.' };
       if (!cart.length) return { ok: false as const, error: 'Your cart is empty.' };
       if (!payload.deliveryAddress.trim() || !payload.district.trim()) {
-        return { ok: false as const, error: 'Enter delivery address and district.' };
+        return {
+          ok: false as const,
+          error:
+            payload.fulfillmentMode === 'pickup'
+              ? 'Confirm shop pickup location.'
+              : 'Enter recipient address and location.',
+        };
+      }
+      if (!payload.recipientName?.trim() || !payload.recipientPhone?.trim()) {
+        return { ok: false as const, error: 'Enter recipient name and phone.' };
       }
       if (!payload.paymentRef.trim()) {
         return { ok: false as const, error: 'Payment was not completed.' };
       }
 
       try {
-        const items = cart.map((l) => ({ product_id: l.productId, quantity: l.quantity }));
-        const quote = await marketApi.quote(token, items);
+        const items = cart.map((l) => ({
+          product_id: l.productId,
+          quantity: l.quantity,
+          ...(l.size ? { size: l.size } : {}),
+        }));
+        const fulfillmentMode = payload.fulfillmentMode || 'delivery';
+        const quote = await marketApi.quote(token, items, {
+          fulfillment_mode: fulfillmentMode,
+        });
         const order = await marketApi.createOrder(token, {
           items,
           delivery_address: payload.deliveryAddress.trim(),
@@ -313,6 +374,9 @@ export function MarketProvider({ children }: { children: ReactNode }) {
           customer_name: customer.name,
           customer_email: customer.email,
           customer_phone: customer.phone,
+          recipient_name: payload.recipientName.trim(),
+          recipient_phone: payload.recipientPhone.trim(),
+          fulfillment_mode: fulfillmentMode,
         });
         setCart([]);
         await refreshCatalog();
@@ -361,11 +425,15 @@ export function MarketProvider({ children }: { children: ReactNode }) {
   );
 
   const updateOrderStatus = useCallback(
-    async (id: string, status: OrderStatus) => {
+    async (
+      id: string,
+      status: OrderStatus,
+      opts?: { trackingNumber?: string; trackingCarrier?: string },
+    ) => {
       const token = getAdminToken();
       if (!token) return 'Admin login required.';
       try {
-        await marketApi.updateOrderStatus(token, id, status);
+        await marketApi.updateOrderStatus(token, id, status, opts);
         await refreshAdminData(token);
         return null;
       } catch (e) {

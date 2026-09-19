@@ -49,8 +49,8 @@ export const PESAPAL_METHODS: Array<{
   },
   {
     id: 'cash',
-    label: 'Cash on delivery',
-    hint: 'Pay the rider or seller in cash when your order arrives',
+    label: 'Pay on delivery / at shop',
+    hint: 'Pay in cash when your order is delivered or when you pick up',
   },
 ];
 

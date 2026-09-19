@@ -8,7 +8,7 @@ import { swalConfirm, swalError, swalSuccess } from '../../utils/swal';
 const empty = (): Omit<MarketCategory, 'createdAt' | 'updatedAt'> => ({
   id: `new_${Date.now()}`,
   name: '',
-  kind: 'produce',
+  kind: 'apparel',
   description: '',
   active: true,
   sortOrder: 0,
@@ -93,7 +93,7 @@ export function AdminCategoriesPage() {
       <div className="admin-page-head">
         <div>
           <h2>Categories</h2>
-          <p>Organize catalogue under produce or farm inputs</p>
+          <p>Organize apparel and accessories</p>
         </div>
         <button type="button" className="btn btn-primary" onClick={() => setEditing(empty())}>
           Add category
@@ -101,14 +101,14 @@ export function AdminCategoriesPage() {
       </div>
 
       <div className="chip-row" style={{ marginBottom: 12 }}>
-        {(['all', 'produce', 'input'] as const).map((k) => (
+        {(['all', 'apparel', 'accessories'] as const).map((k) => (
           <button
             key={k}
             type="button"
             className={`chip ${filter === k ? 'active' : ''}`}
             onClick={() => setFilter(k)}
           >
-            {k === 'all' ? 'All' : k === 'produce' ? 'Produce' : 'Inputs'}
+            {k === 'all' ? 'All' : k === 'apparel' ? 'Apparel' : 'Accessories'}
           </button>
         ))}
       </div>
@@ -153,8 +153,8 @@ export function AdminCategoriesPage() {
                     setEditing({ ...editing, kind: e.target.value as ProductKind })
                   }
                 >
-                  <option value="produce">Produce</option>
-                  <option value="input">Farm input</option>
+                  <option value="apparel">Apparel</option>
+                  <option value="accessories">Accessories</option>
                 </select>
               </div>
               <div className="field">
@@ -216,7 +216,7 @@ export function AdminCategoriesPage() {
                       <div style={{ color: '#667', fontSize: 12 }}>{c.description}</div>
                     ) : null}
                   </td>
-                  <td>{c.kind === 'produce' ? 'Produce' : 'Input'}</td>
+                  <td>{c.kind === 'apparel' ? 'Apparel' : 'Accessories'}</td>
                   <td>{c.sortOrder}</td>
                   <td>{c.active ? 'Active' : 'Hidden'}</td>
                   <td>

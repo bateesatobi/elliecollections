@@ -1,15 +1,19 @@
+import { useEffect, useState } from 'react';
 import { Link, Navigate, Outlet, useLocation } from 'react-router-dom';
 import {
-  Boxes,
   Folders,
   HandCoins,
   LayoutDashboard,
   LogOut,
+  Megaphone,
+  Menu,
+  MessageSquareQuote,
   Package,
   Receipt,
   Ruler,
   Users,
   Wallet,
+  X,
 } from 'lucide-react';
 import { useMarket } from '../store/MarketStore';
 import './admin.css';
@@ -17,15 +21,19 @@ import './admin.css';
 const TITLES: Record<string, { title: string; subtitle: string }> = {
   '/admin': {
     title: 'Overview',
-    subtitle: 'Marketplace health at a glance',
+    subtitle: 'Boutique health at a glance',
   },
   '/admin/products': {
     title: 'Catalogue',
-    subtitle: 'Manage produce and farm inputs',
+    subtitle: 'Manage apparel and accessories',
+  },
+  '/admin/promos': {
+    title: 'Promotions',
+    subtitle: 'Animated storefront banners and campaigns',
   },
   '/admin/categories': {
     title: 'Categories',
-    subtitle: 'Produce and input category catalogue',
+    subtitle: 'Fashion category catalogue',
   },
   '/admin/units': {
     title: 'Units',
@@ -47,82 +55,115 @@ const TITLES: Record<string, { title: string; subtitle: string }> = {
     title: 'Disbursements',
     subtitle: 'Pay sellers for online marketplace sales',
   },
+  '/admin/reviews': {
+    title: 'Reviews',
+    subtitle: 'Approve or hide customer ratings and feedback',
+  },
 };
+
+const NAV = [
+  { to: '/admin', label: 'Overview', icon: LayoutDashboard, end: true },
+  { to: '/admin/products', label: 'Products', icon: Package },
+  { to: '/admin/promos', label: 'Promotions', icon: Megaphone },
+  { to: '/admin/categories', label: 'Categories', icon: Folders },
+  { to: '/admin/units', label: 'Units', icon: Ruler },
+  { to: '/admin/orders', label: 'Orders', icon: Receipt },
+  { to: '/admin/reviews', label: 'Reviews', icon: MessageSquareQuote },
+  { to: '/admin/users', label: 'Users', icon: Users },
+  { to: '/admin/revenue', label: 'Revenue', icon: Wallet },
+  { to: '/admin/disbursements', label: 'Disbursements', icon: HandCoins },
+] as const;
 
 export function AdminLayout() {
   const { admin, logoutAdmin } = useMarket();
   const { pathname } = useLocation();
+  const [navOpen, setNavOpen] = useState(false);
+
+  useEffect(() => {
+    setNavOpen(false);
+  }, [pathname]);
+
   if (!admin) return <Navigate to="/admin/login" replace />;
 
   const meta = TITLES[pathname] ?? TITLES['/admin'];
+  const initials = admin.name
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((p) => p[0]?.toUpperCase() || '')
+    .join('');
+
+  const isActive = (to: string, end?: boolean) =>
+    end ? pathname === to : pathname === to || pathname.startsWith(`${to}/`);
 
   return (
-    <div className="admin-shell">
+    <div className={`admin-shell${navOpen ? ' nav-open' : ''}`}>
       <aside className="admin-aside">
         <div className="admin-brand">
-          <strong>AgriSense</strong>
+          <strong>
+            Ellie<em>collections</em>
+          </strong>
           <span>Admin console</span>
         </div>
-        <nav>
-          <Link to="/admin" className={pathname === '/admin' ? 'active' : undefined}>
-            <LayoutDashboard size={18} /> Overview
-          </Link>
-          <Link
-            to="/admin/products"
-            className={pathname.startsWith('/admin/products') ? 'active' : undefined}
-          >
-            <Package size={18} /> Products
-          </Link>
-          <Link
-            to="/admin/categories"
-            className={pathname.startsWith('/admin/categories') ? 'active' : undefined}
-          >
-            <Folders size={18} /> Categories
-          </Link>
-          <Link
-            to="/admin/units"
-            className={pathname.startsWith('/admin/units') ? 'active' : undefined}
-          >
-            <Ruler size={18} /> Units
-          </Link>
-          <Link
-            to="/admin/orders"
-            className={pathname.startsWith('/admin/orders') ? 'active' : undefined}
-          >
-            <Receipt size={18} /> Orders
-          </Link>
-          <Link
-            to="/admin/users"
-            className={pathname.startsWith('/admin/users') ? 'active' : undefined}
-          >
-            <Users size={18} /> Users
-          </Link>
-          <Link
-            to="/admin/revenue"
-            className={pathname.startsWith('/admin/revenue') ? 'active' : undefined}
-          >
-            <Wallet size={18} /> Revenue
-          </Link>
-          <Link
-            to="/admin/disbursements"
-            className={pathname.startsWith('/admin/disbursements') ? 'active' : undefined}
-          >
-            <HandCoins size={18} /> Disbursements
-          </Link>
+
+        <nav onClick={() => setNavOpen(false)}>
+          <p className="admin-nav-label">Boutique</p>
+          {NAV.slice(0, 5).map((item) => {
+            const Icon = item.icon;
+            const active = isActive(item.to, 'end' in item ? Boolean(item.end) : false);
+            return (
+              <Link key={item.to} to={item.to} className={active ? 'active' : undefined}>
+                <Icon size={18} /> {item.label}
+              </Link>
+            );
+          })}
+          <p className="admin-nav-label">Operations</p>
+          {NAV.slice(5).map((item) => {
+            const Icon = item.icon;
+            const active = isActive(item.to);
+            return (
+              <Link key={item.to} to={item.to} className={active ? 'active' : undefined}>
+                <Icon size={18} /> {item.label}
+              </Link>
+            );
+          })}
         </nav>
+
         <button type="button" className="admin-logout" onClick={logoutAdmin}>
           <LogOut size={16} /> Sign out
         </button>
       </aside>
+
+      {navOpen ? (
+        <button
+          type="button"
+          className="admin-nav-scrim"
+          aria-label="Close menu"
+          onClick={() => setNavOpen(false)}
+        />
+      ) : null}
+
       <div className="admin-main">
         <header className="admin-top">
-          <div>
-            <h1>{meta.title}</h1>
-            <p>{meta.subtitle}</p>
+          <div className="admin-top-left">
+            <button
+              type="button"
+              className="admin-menu-toggle"
+              aria-label={navOpen ? 'Close menu' : 'Open menu'}
+              onClick={() => setNavOpen((v) => !v)}
+            >
+              {navOpen ? <X size={18} /> : <Menu size={18} />}
+            </button>
+            <div>
+              <h1>{meta.title}</h1>
+              <p>{meta.subtitle}</p>
+            </div>
           </div>
           <div className="admin-user">
-            <Boxes size={16} />
-            {admin.name}
+            <span className="admin-user-avatar">{initials || 'A'}</span>
+            <span className="admin-user-meta">
+              <strong>{admin.name}</strong>
+              <small>Administrator</small>
+            </span>
           </div>
         </header>
         <div className="admin-content">

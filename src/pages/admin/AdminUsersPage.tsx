@@ -282,7 +282,7 @@ export function AdminUsersPage() {
                         {
                           label: 'Delete',
                           tone: 'danger',
-                          disabled: u.id === 'u_admin' || u.email === 'admin@agrisense.ug',
+                          disabled: u.id === 'u_admin' || u.email === 'admin@elliecollections.com',
                           onClick: async () => {
                             const ok = await swalConfirm(
                               'Delete user?',

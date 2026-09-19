@@ -45,6 +45,37 @@ export function discountPercentFromPrices(
   return getPriceDisplay(priceUgx, compareAtPriceUgx).percentOff;
 }
 
+/** Unit price after optional bulk volume discount. */
+export function unitPriceForQty(
+  priceUgx: number,
+  qty: number,
+  bulkDiscountPercent?: number | null,
+  bulkDiscountQty?: number | null,
+): number {
+  const base = Math.round(priceUgx);
+  const pct =
+    typeof bulkDiscountPercent === 'number' && bulkDiscountPercent > 0
+      ? Math.min(99, Math.round(bulkDiscountPercent))
+      : 0;
+  const need =
+    typeof bulkDiscountQty === 'number' && bulkDiscountQty >= 2
+      ? Math.round(bulkDiscountQty)
+      : 0;
+  if (pct > 0 && need > 0 && qty >= need) {
+    return Math.max(0, Math.round(base * (1 - pct / 100)));
+  }
+  return base;
+}
+
+export function effectiveMinOrderQty(product: {
+  saleMode?: string;
+  minOrderQty?: number | null;
+}): number {
+  const moq = product.minOrderQty && product.minOrderQty > 0 ? product.minOrderQty : 1;
+  if (product.saleMode === 'wholesale') return Math.max(2, moq);
+  return Math.max(1, moq);
+}
+
 /** Parse mobile string prices like "95,000" */
 export function parsePriceString(price: string): number {
   const n = Number.parseFloat(String(price).replace(/,/g, '').replace(/[^\d.]/g, ''));

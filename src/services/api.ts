@@ -1,4 +1,4 @@
-/** AgriSense market API client — talks to Agrobackend FastAPI. */
+/** Elliecollections market API client — talks to Agrobackend FastAPI. */
 import type {
   DeliveryMode,
   DeliveryPeriod,
@@ -16,10 +16,10 @@ import { discountPercentFromPrices, listPriceFromDiscount } from '../utils/prici
 
 const API_URL =
   (import.meta.env.VITE_API_URL as string | undefined)?.replace(/\/$/, '') ||
-  'https://ai.busitema.ac.ug/agro';
+  'https://elliecollections-api-latest.onrender.com';
 
-const TOKEN_KEY = 'agrisense_market_token';
-const ADMIN_TOKEN_KEY = 'agrisense_market_admin_token';
+const TOKEN_KEY = 'ellie_market_token';
+const ADMIN_TOKEN_KEY = 'ellie_market_admin_token';
 
 export function getApiUrl() {
   return API_URL;
@@ -53,6 +53,10 @@ type ApiProduct = {
   price_ugx: number;
   compare_at_price_ugx?: number | null;
   discount_percent?: number | null;
+  sale_mode?: string | null;
+  min_order_qty?: number | null;
+  bulk_discount_percent?: number | null;
+  bulk_discount_qty?: number | null;
   unit: string;
   unit_id?: string | null;
   stock: number;
@@ -64,10 +68,33 @@ type ApiProduct = {
   location: string;
   featured?: boolean;
   active: boolean;
+  size?: string | null;
+  sizes?: string[] | null;
+  color?: string | null;
+  make?: string | null;
+  brand?: string | null;
+  badge?: string | null;
+  on_promotion?: boolean | null;
+  delivery_available?: boolean | null;
   delivery_mode?: string | null;
   delivery_period?: string | null;
   created_at: string;
   updated_at?: string | null;
+};
+
+export type Promo = {
+  id: string;
+  title: string;
+  subtitle: string;
+  badge: string;
+  ctaLabel: string;
+  ctaUrl: string;
+  imageUrl: string;
+  animation: 'slide' | 'fade' | 'marquee';
+  active: boolean;
+  sortOrder: number;
+  startsAt?: string;
+  endsAt?: string;
 };
 
 type ApiCategory = {
@@ -104,6 +131,7 @@ type ApiOrder = {
     unit: string;
     quantity: number;
     unit_price_ugx: number;
+    size?: string | null;
   }>;
   subtotal_ugx: number;
   delivery_ugx: number;
@@ -111,6 +139,11 @@ type ApiOrder = {
   status: OrderStatus;
   delivery_address: string;
   district: string;
+  fulfillment_mode?: string | null;
+  recipient_name?: string | null;
+  recipient_phone?: string | null;
+  tracking_number?: string | null;
+  tracking_carrier?: string | null;
   payment_ref: string;
   payment_method?: PaymentMethod;
   created_at: string;
@@ -194,7 +227,7 @@ export function mapProduct(p: ApiProduct): Product {
       : '3_days';
   return {
     id: p.id,
-    kind: (p.kind as ProductKind) || 'produce',
+    kind: (p.kind as ProductKind) || 'apparel',
     title: p.title,
     category: p.category,
     categoryId: p.category_id || undefined,
@@ -202,16 +235,42 @@ export function mapProduct(p: ApiProduct): Product {
     priceUgx: p.price_ugx,
     compareAtPriceUgx: compareAt,
     discountPercent,
+    saleMode: p.sale_mode === 'wholesale' ? 'wholesale' : 'retail',
+    minOrderQty:
+      p.min_order_qty != null && p.min_order_qty > 0 ? p.min_order_qty : undefined,
+    bulkDiscountPercent:
+      p.bulk_discount_percent != null && p.bulk_discount_percent > 0
+        ? p.bulk_discount_percent
+        : undefined,
+    bulkDiscountQty:
+      p.bulk_discount_qty != null && p.bulk_discount_qty >= 2
+        ? p.bulk_discount_qty
+        : undefined,
     unit: p.unit,
     unitId: p.unit_id || undefined,
     stock: p.stock,
-    imageEmoji: p.image_emoji || '🛒',
+    imageEmoji: p.image_emoji || '👗',
     images,
     imageUrls,
     seller: p.seller_name || '',
     location: p.location || '',
     featured: !!p.featured,
     active: !!p.active,
+    size: p.size || undefined,
+    sizes: Array.isArray(p.sizes)
+      ? p.sizes.filter(Boolean)
+      : p.size
+        ? String(p.size)
+            .split(',')
+            .map((s) => s.trim())
+            .filter(Boolean)
+        : [],
+    color: p.color || undefined,
+    make: p.make || undefined,
+    brand: p.brand || undefined,
+    badge: p.badge || undefined,
+    onPromotion: !!p.on_promotion,
+    deliveryAvailable: p.delivery_available !== false,
     deliveryMode,
     deliveryPeriod,
     createdAt: typeof p.created_at === 'string' ? p.created_at : new Date(p.created_at).toISOString(),
@@ -229,7 +288,7 @@ function mapCategory(c: ApiCategory): MarketCategory {
   return {
     id: c.id,
     name: c.name,
-    kind: (c.kind as ProductKind) || 'produce',
+    kind: (c.kind as ProductKind) || 'apparel',
     description: c.description || '',
     active: !!c.active,
     sortOrder: c.sort_order ?? 0,
@@ -274,6 +333,7 @@ export function mapOrder(o: ApiOrder): Order {
       unit: i.unit,
       quantity: i.quantity,
       unitPriceUgx: i.unit_price_ugx,
+      size: i.size || undefined,
     })),
     subtotalUgx: o.subtotal_ugx,
     deliveryUgx: o.delivery_ugx,
@@ -281,6 +341,12 @@ export function mapOrder(o: ApiOrder): Order {
     status: o.status,
     deliveryAddress: o.delivery_address,
     district: o.district,
+    fulfillmentMode:
+      o.fulfillment_mode === 'pickup' ? 'pickup' : 'delivery',
+    recipientName: o.recipient_name || o.customer_name,
+    recipientPhone: o.recipient_phone || o.customer_phone,
+    trackingNumber: o.tracking_number || undefined,
+    trackingCarrier: o.tracking_carrier || undefined,
     paymentRef: o.payment_ref,
     paymentMethod: o.payment_method,
     createdAt:
@@ -356,7 +422,13 @@ export const marketApi = {
     return tok.access_token;
   },
 
-  async register(data: { name: string; email: string; phone: string; password: string }) {
+  async register(data: {
+    name: string;
+    email: string;
+    phone: string;
+    password: string;
+    referredBy?: string;
+  }) {
     await request('/register', {
       method: 'POST',
       body: JSON.stringify({
@@ -367,6 +439,7 @@ export const marketApi = {
         email: data.email,
         role: 'customer',
         profile_complete: false,
+        referred_by: data.referredBy || undefined,
       }),
     });
     return this.login(data.phone, data.password);
@@ -375,6 +448,19 @@ export const marketApi = {
   async me(token: string) {
     const me = await request<ApiMe>('/me', { token });
     return mapSession(me);
+  },
+
+  async myReferral(token: string) {
+    return request<{ referral_code: string; referral_count: number; share_base_path: string }>(
+      '/market/referral/me',
+      { token },
+    );
+  },
+
+  async resolveReferral(code: string) {
+    return request<{ ok: boolean; referral_code: string; referrer_name?: string | null }>(
+      `/market/referral/resolve/${encodeURIComponent(code)}`,
+    );
   },
 
   async myOrders(token: string) {
@@ -399,7 +485,8 @@ export const marketApi = {
 
   async quote(
     token: string,
-    items: Array<{ product_id: string; quantity: number }>,
+    items: Array<{ product_id: string; quantity: number; size?: string }>,
+    opts?: { fulfillment_mode?: 'delivery' | 'pickup' },
   ) {
     return request<{
       quote_id: string;
@@ -409,7 +496,10 @@ export const marketApi = {
     }>('/market/checkout/quote', {
       method: 'POST',
       token,
-      body: JSON.stringify({ items }),
+      body: JSON.stringify({
+        items,
+        fulfillment_mode: opts?.fulfillment_mode || 'delivery',
+      }),
     });
   },
 
@@ -439,7 +529,7 @@ export const marketApi = {
   async createOrder(
     token: string,
     payload: {
-      items: Array<{ product_id: string; quantity: number }>;
+      items: Array<{ product_id: string; quantity: number; size?: string }>;
       delivery_address: string;
       district: string;
       payment_method: PaymentMethod;
@@ -450,6 +540,9 @@ export const marketApi = {
       customer_name?: string;
       customer_email?: string;
       customer_phone?: string;
+      recipient_name?: string;
+      recipient_phone?: string;
+      fulfillment_mode?: 'delivery' | 'pickup';
     },
   ) {
     const order = await request<ApiOrder>('/market/orders', {
@@ -487,6 +580,24 @@ export const marketApi = {
       price_ugx: product.priceUgx,
       compare_at_price_ugx: compareAt ?? null,
       discount_percent: discountPercent,
+      sale_mode: product.saleMode === 'wholesale' ? 'wholesale' : 'retail',
+      min_order_qty:
+        product.saleMode === 'wholesale'
+          ? Math.max(2, product.minOrderQty || 10)
+          : product.minOrderQty && product.minOrderQty > 1
+            ? product.minOrderQty
+            : 1,
+      bulk_discount_percent:
+        product.bulkDiscountPercent && product.bulkDiscountPercent > 0
+          ? Math.min(99, Math.round(product.bulkDiscountPercent))
+          : null,
+      bulk_discount_qty:
+        product.bulkDiscountPercent &&
+        product.bulkDiscountPercent > 0 &&
+        product.bulkDiscountQty &&
+        product.bulkDiscountQty >= 2
+          ? Math.round(product.bulkDiscountQty)
+          : null,
       unit: product.unit,
       unit_id: product.unitId || undefined,
       stock: product.stock,
@@ -496,9 +607,18 @@ export const marketApi = {
       location: product.location,
       featured: product.featured,
       active: product.active,
+      size: product.sizes?.length
+        ? product.sizes.join(', ')
+        : product.size,
+      sizes: product.sizes || [],
+      color: product.color,
+      make: product.make,
+      brand: product.brand || 'Elliecollections',
+      badge: product.badge || undefined,
+      on_promotion: !!product.onPromotion,
+      delivery_available: product.deliveryAvailable !== false,
       delivery_mode: product.deliveryMode || 'paid',
       delivery_period: product.deliveryPeriod || '3_days',
-      delivery_available: true,
     };
     if (isNew) {
       const created = await request<ApiProduct>('/market/products', {
@@ -613,13 +733,152 @@ export const marketApi = {
     await request(`/market/admin/units/${id}`, { method: 'DELETE', token });
   },
 
-  async updateOrderStatus(token: string, id: string, status: OrderStatus) {
+  async updateOrderStatus(
+    token: string,
+    id: string,
+    status: OrderStatus,
+    opts?: { trackingNumber?: string; trackingCarrier?: string },
+  ) {
     const order = await request<ApiOrder>(`/market/admin/orders/${id}/status`, {
       method: 'PATCH',
       token,
-      body: JSON.stringify({ status }),
+      body: JSON.stringify({
+        status,
+        tracking_number: opts?.trackingNumber ?? null,
+        tracking_carrier: opts?.trackingCarrier ?? null,
+      }),
     });
     return mapOrder(order);
+  },
+
+  async lookupOrder(orderId: string, phone: string) {
+    const order = await request<ApiOrder>('/market/orders/lookup', {
+      method: 'POST',
+      body: JSON.stringify({ order_id: orderId.trim(), phone: phone.trim() }),
+    });
+    return mapOrder(order);
+  },
+
+  async listReviews(productId: string) {
+    const data = await request<{
+      items: Array<{
+        id: string;
+        product_id: string;
+        user_id: string;
+        author_name: string;
+        rating: number;
+        title?: string;
+        body: string;
+        visible?: boolean;
+        created_at: string;
+      }>;
+      total: number;
+      average: number;
+    }>(`/market/products/${productId}/reviews`);
+    return {
+      average: data.average || 0,
+      total: data.total || 0,
+      items: (data.items || []).map((r) => ({
+        id: r.id,
+        productId: r.product_id,
+        userId: r.user_id,
+        authorName: r.author_name,
+        rating: r.rating,
+        title: r.title || '',
+        body: r.body,
+        visible: r.visible !== false,
+        createdAt:
+          typeof r.created_at === 'string'
+            ? r.created_at
+            : new Date(r.created_at).toISOString(),
+      })),
+    };
+  },
+
+  async createReview(
+    token: string,
+    productId: string,
+    payload: { rating: number; title?: string; body: string },
+  ) {
+    const r = await request<{
+      id: string;
+      product_id: string;
+      user_id: string;
+      author_name: string;
+      rating: number;
+      title?: string;
+      body: string;
+      visible?: boolean;
+      created_at: string;
+    }>(`/market/products/${productId}/reviews`, {
+      method: 'POST',
+      token,
+      body: JSON.stringify(payload),
+    });
+    return {
+      id: r.id,
+      productId: r.product_id,
+      userId: r.user_id,
+      authorName: r.author_name,
+      rating: r.rating,
+      title: r.title || '',
+      body: r.body,
+      visible: !!r.visible,
+      createdAt:
+        typeof r.created_at === 'string' ? r.created_at : new Date(r.created_at).toISOString(),
+    };
+  },
+
+  async adminListReviews(token: string, visible?: boolean) {
+    const q =
+      visible === undefined ? '' : `?visible=${visible ? 'true' : 'false'}`;
+    const data = await request<{
+      items: Array<{
+        id: string;
+        product_id: string;
+        user_id: string;
+        author_name: string;
+        rating: number;
+        title?: string;
+        body: string;
+        visible?: boolean;
+        created_at: string;
+      }>;
+      total: number;
+      average: number;
+      pending_count?: number;
+    }>(`/market/admin/reviews${q}`, { token });
+    return {
+      average: data.average || 0,
+      total: data.total || 0,
+      pendingCount: data.pending_count || 0,
+      items: (data.items || []).map((r) => ({
+        id: r.id,
+        productId: r.product_id,
+        userId: r.user_id,
+        authorName: r.author_name,
+        rating: r.rating,
+        title: r.title || '',
+        body: r.body,
+        visible: !!r.visible,
+        createdAt:
+          typeof r.created_at === 'string'
+            ? r.created_at
+            : new Date(r.created_at).toISOString(),
+      })),
+    };
+  },
+
+  async adminSetReviewVisibility(token: string, id: string, visible: boolean) {
+    await request(`/market/admin/reviews/${id}/visibility`, {
+      method: 'PATCH',
+      token,
+      body: JSON.stringify({ visible }),
+    });
+  },
+
+  async adminDeleteReview(token: string, id: string) {
+    await request(`/market/admin/reviews/${id}`, { method: 'DELETE', token });
   },
 
   async refundOrder(token: string, id: string, amountUgx: number, note: string) {
@@ -756,5 +1015,112 @@ export const marketApi = {
       method: 'POST',
       token,
     });
+  },
+
+  async listPromos() {
+    const data = await request<{
+      items: Array<{
+        id: string;
+        title: string;
+        subtitle?: string;
+        badge?: string;
+        cta_label?: string;
+        cta_url?: string;
+        image_url?: string;
+        animation?: string;
+        active: boolean;
+        sort_order?: number;
+        starts_at?: string | null;
+        ends_at?: string | null;
+      }>;
+    }>('/market/promos');
+    return data.items.map(
+      (p): Promo => ({
+        id: p.id,
+        title: p.title,
+        subtitle: p.subtitle || '',
+        badge: p.badge || 'Promo',
+        ctaLabel: p.cta_label || 'Shop now',
+        ctaUrl: p.cta_url || '/shop?promo=1',
+        imageUrl: p.image_url || '',
+        animation: (p.animation as Promo['animation']) || 'slide',
+        active: !!p.active,
+        sortOrder: p.sort_order || 0,
+        startsAt: p.starts_at || undefined,
+        endsAt: p.ends_at || undefined,
+      }),
+    );
+  },
+
+  async adminListPromos(token: string) {
+    const data = await request<{
+      items: Array<{
+        id: string;
+        title: string;
+        subtitle?: string;
+        badge?: string;
+        cta_label?: string;
+        cta_url?: string;
+        image_url?: string;
+        animation?: string;
+        active: boolean;
+        sort_order?: number;
+        starts_at?: string | null;
+        ends_at?: string | null;
+      }>;
+      total: number;
+    }>('/market/admin/promos', { token });
+    return data.items.map(
+      (p): Promo => ({
+        id: p.id,
+        title: p.title,
+        subtitle: p.subtitle || '',
+        badge: p.badge || 'Promo',
+        ctaLabel: p.cta_label || 'Shop now',
+        ctaUrl: p.cta_url || '/shop?promo=1',
+        imageUrl: p.image_url || '',
+        animation: (p.animation as Promo['animation']) || 'slide',
+        active: !!p.active,
+        sortOrder: p.sort_order || 0,
+        startsAt: p.starts_at || undefined,
+        endsAt: p.ends_at || undefined,
+      }),
+    );
+  },
+
+  async upsertPromo(
+    token: string,
+    promo: Omit<Promo, 'id'> & { id?: string },
+    isNew: boolean,
+  ) {
+    const body = {
+      title: promo.title,
+      subtitle: promo.subtitle,
+      badge: promo.badge,
+      cta_label: promo.ctaLabel,
+      cta_url: promo.ctaUrl,
+      image_url: promo.imageUrl,
+      animation: promo.animation,
+      active: promo.active,
+      sort_order: promo.sortOrder,
+      starts_at: promo.startsAt || null,
+      ends_at: promo.endsAt || null,
+    };
+    if (isNew) {
+      return request('/market/admin/promos', {
+        method: 'POST',
+        token,
+        body: JSON.stringify(body),
+      });
+    }
+    return request(`/market/admin/promos/${promo.id}`, {
+      method: 'PATCH',
+      token,
+      body: JSON.stringify(body),
+    });
+  },
+
+  async deletePromo(token: string, id: string) {
+    await request(`/market/admin/promos/${id}`, { method: 'DELETE', token });
   },
 };

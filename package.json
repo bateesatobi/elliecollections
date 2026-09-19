@@ -1,7 +1,7 @@
 {
-  "name": "agrisense-market",
+  "name": "elliecollections",
   "private": true,
-  "version": "1.0.0",
+  "version": "2.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -12,6 +12,7 @@
     "lucide-react": "^0.525.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
+    "react-helmet-async": "^3.0.0",
     "react-router-dom": "^7.6.3",
     "sweetalert2": "^11.26.25"
   },

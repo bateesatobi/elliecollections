@@ -11,17 +11,25 @@ import type {
   MarketUnit,
   Product,
   ProductKind,
+  SaleMode,
 } from '../../types';
-import { DELIVERY_PERIOD_LABELS } from '../../types';
+import {
+  ACCESSORY_SIZE_OPTIONS,
+  APPAREL_SIZE_OPTIONS,
+  DELIVERY_PERIOD_LABELS,
+  SALE_MODE_LABELS,
+  SHOE_SIZE_OPTIONS,
+} from '../../types';
 import { getPrimaryImage, getProductImages } from '../../utils/productImages';
 import { getPriceDisplay, listPriceFromDiscount } from '../../utils/pricing';
 import { swalConfirm, swalError, swalSuccess } from '../../utils/swal';
 
 type ProductForm = Omit<Product, 'createdAt' | 'updatedAt'> & {
   applyDiscount: boolean;
+  applyBulkDiscount: boolean;
 };
 
-const emptyForm = (kind: ProductKind = 'produce'): ProductForm => ({
+const emptyForm = (kind: ProductKind = 'apparel'): ProductForm => ({
   id: `new_${Date.now()}`,
   kind,
   title: '',
@@ -31,14 +39,27 @@ const emptyForm = (kind: ProductKind = 'produce'): ProductForm => ({
   priceUgx: 0,
   discountPercent: undefined,
   applyDiscount: false,
-  unit: 'kg',
+  saleMode: 'retail',
+  minOrderQty: 1,
+  bulkDiscountPercent: undefined,
+  bulkDiscountQty: undefined,
+  applyBulkDiscount: false,
+  unit: 'pc',
   unitId: undefined,
   stock: 0,
-  imageEmoji: '🌽',
+  imageEmoji: '👗',
   images: [],
   imageUrls: [],
-  seller: '',
-  location: '',
+  seller: 'Elliecollections',
+  location: 'Kampala',
+  brand: 'Elliecollections',
+  size: '',
+  sizes: [],
+  color: '',
+  make: '',
+  badge: '',
+  onPromotion: false,
+  deliveryAvailable: true,
   featured: false,
   active: true,
   deliveryMode: 'paid',
@@ -52,6 +73,13 @@ function toForm(p: Product): ProductForm {
       : p.compareAtPriceUgx && p.compareAtPriceUgx > p.priceUgx
         ? Math.round(((p.compareAtPriceUgx - p.priceUgx) / p.compareAtPriceUgx) * 100)
         : 0;
+  const sizes =
+    p.sizes && p.sizes.length
+      ? p.sizes
+      : p.size
+        ? p.size.split(',').map((s) => s.trim()).filter(Boolean)
+        : [];
+  const bulkPct = p.bulkDiscountPercent && p.bulkDiscountPercent > 0 ? p.bulkDiscountPercent : 0;
   return {
     id: p.id,
     kind: p.kind,
@@ -63,6 +91,11 @@ function toForm(p: Product): ProductForm {
     compareAtPriceUgx: p.compareAtPriceUgx,
     discountPercent: discount || undefined,
     applyDiscount: discount > 0,
+    saleMode: p.saleMode === 'wholesale' ? 'wholesale' : 'retail',
+    minOrderQty: p.minOrderQty || (p.saleMode === 'wholesale' ? 10 : 1),
+    bulkDiscountPercent: bulkPct || undefined,
+    bulkDiscountQty: p.bulkDiscountQty || undefined,
+    applyBulkDiscount: bulkPct > 0,
     unit: p.unit,
     unitId: p.unitId,
     stock: p.stock,
@@ -71,6 +104,14 @@ function toForm(p: Product): ProductForm {
     imageUrls: p.imageUrls ?? [],
     seller: p.seller,
     location: p.location,
+    brand: p.brand || 'Elliecollections',
+    size: sizes.join(', '),
+    sizes,
+    color: p.color || '',
+    make: p.make || '',
+    badge: p.badge || '',
+    onPromotion: !!p.onPromotion,
+    deliveryAvailable: p.deliveryAvailable !== false,
     featured: !!p.featured,
     active: p.active,
     deliveryMode: p.deliveryMode || 'paid',
@@ -105,7 +146,7 @@ export function AdminProductsPage() {
 
   useEffect(() => {
     if (params.get('new') === '1') {
-      const kindFromTab = filter === 'input' || filter === 'produce' ? filter : 'produce';
+      const kindFromTab = filter === 'accessories' || filter === 'apparel' ? filter : 'apparel';
       setEditing(emptyForm(kindFromTab));
       const next = new URLSearchParams(params);
       next.delete('new');
@@ -142,7 +183,7 @@ export function AdminProductsPage() {
     to,
   } = useAdminPagination(list, 10, filter);
 
-  const formKind: ProductKind = editing?.kind ?? (filter === 'input' ? 'input' : 'produce');
+  const formKind: ProductKind = editing?.kind ?? (filter === 'accessories' ? 'accessories' : 'apparel');
 
   const categoriesForKind = useMemo(
     () => categories.filter((c) => c.kind === formKind),
@@ -150,7 +191,7 @@ export function AdminProductsPage() {
   );
 
   const startNewProduct = () => {
-    const kindFromTab = filter === 'input' || filter === 'produce' ? filter : 'produce';
+    const kindFromTab = filter === 'accessories' || filter === 'apparel' ? filter : 'apparel';
     setEditing(emptyForm(kindFromTab));
   };
 
@@ -162,6 +203,26 @@ export function AdminProductsPage() {
       await swalError('Missing category', 'Select a category before saving.');
       return;
     }
+    if (editing.saleMode === 'wholesale' && (!editing.minOrderQty || editing.minOrderQty < 2)) {
+      await swalError(
+        'Wholesale minimum',
+        'Wholesale products need a minimum order quantity of at least 2.',
+      );
+      return;
+    }
+    if (editing.applyBulkDiscount) {
+      if (!editing.bulkDiscountPercent || editing.bulkDiscountPercent < 1) {
+        await swalError('Bulk discount', 'Enter a bulk discount percent (1–99).');
+        return;
+      }
+      if (!editing.bulkDiscountQty || editing.bulkDiscountQty < 2) {
+        await swalError(
+          'Bulk discount',
+          'Enter how many items unlock the bulk discount (e.g. 20).',
+        );
+        return;
+      }
+    }
     const isNew = editing.id.startsWith('new_') || !products.some((p) => p.id === editing.id);
     const discountPercent =
       editing.applyDiscount && editing.discountPercent && editing.discountPercent > 0
@@ -169,12 +230,31 @@ export function AdminProductsPage() {
         : 0;
     const payload: Omit<Product, 'createdAt' | 'updatedAt'> = {
       ...editing,
+      brand: editing.brand?.trim() || 'Elliecollections',
+      make: editing.make?.trim() || undefined,
+      sizes: editing.sizes || [],
+      size: (editing.sizes || []).join(', ') || undefined,
+      color: editing.color?.trim() || undefined,
+      badge: editing.badge?.trim() || undefined,
+      onPromotion: !!editing.onPromotion,
+      deliveryAvailable: editing.deliveryAvailable !== false,
+      saleMode: editing.saleMode === 'wholesale' ? 'wholesale' : 'retail',
+      minOrderQty:
+        editing.saleMode === 'wholesale'
+          ? Math.max(2, editing.minOrderQty || 10)
+          : Math.max(1, editing.minOrderQty || 1),
+      bulkDiscountPercent: editing.applyBulkDiscount
+        ? Math.min(99, Math.round(editing.bulkDiscountPercent || 0))
+        : undefined,
+      bulkDiscountQty: editing.applyBulkDiscount
+        ? Math.max(2, Math.round(editing.bulkDiscountQty || 0))
+        : undefined,
       discountPercent: discountPercent || undefined,
       compareAtPriceUgx:
         discountPercent > 0
           ? listPriceFromDiscount(editing.priceUgx, discountPercent)
           : undefined,
-      seller: editing.kind === 'input' ? editing.seller || 'AgriSense' : editing.seller,
+      seller: editing.seller?.trim() || editing.brand?.trim() || 'Elliecollections',
     };
     const err = await upsertProduct(payload);
     if (err) {
@@ -291,7 +371,7 @@ export function AdminProductsPage() {
     <div>
       <div className="admin-page-head">
         <div>
-          <h2>Products & produce</h2>
+          <h2>Products</h2>
           <p>Catalogue photos, pricing, stock and visibility</p>
         </div>
         <button type="button" className="btn btn-primary" onClick={startNewProduct}>
@@ -300,14 +380,14 @@ export function AdminProductsPage() {
       </div>
 
       <div className="chip-row" style={{ marginBottom: 12 }}>
-        {(['all', 'produce', 'input'] as const).map((k) => (
+        {(['all', 'apparel', 'accessories'] as const).map((k) => (
           <button
             key={k}
             type="button"
             className={`chip ${filter === k ? 'active' : ''}`}
             onClick={() => setFilter(k)}
           >
-            {k === 'all' ? 'All' : k === 'produce' ? 'Produce' : 'Inputs'}
+            {k === 'all' ? 'All' : k === 'apparel' ? 'Apparel' : 'Accessories'}
           </button>
         ))}
       </div>
@@ -351,8 +431,8 @@ export function AdminProductsPage() {
                   value={editing.kind}
                   onChange={(e) => setKind(e.target.value as ProductKind)}
                 >
-                  <option value="produce">Produce</option>
-                  <option value="input">Farm input</option>
+                  <option value="apparel">Apparel</option>
+                  <option value="accessories">Accessories</option>
                 </select>
               </div>
               <div className="field">
@@ -406,6 +486,46 @@ export function AdminProductsPage() {
                 />
               </div>
               <div className="field">
+                <label>Sale mode</label>
+                <select
+                  value={editing.saleMode || 'retail'}
+                  onChange={(e) => {
+                    const saleMode = e.target.value as SaleMode;
+                    setEditing({
+                      ...editing,
+                      saleMode,
+                      minOrderQty:
+                        saleMode === 'wholesale'
+                          ? Math.max(2, editing.minOrderQty || 10)
+                          : 1,
+                    });
+                  }}
+                >
+                  {(Object.keys(SALE_MODE_LABELS) as SaleMode[]).map((m) => (
+                    <option key={m} value={m}>
+                      {SALE_MODE_LABELS[m]}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              {editing.saleMode === 'wholesale' ? (
+                <div className="field">
+                  <label>Minimum order quantity</label>
+                  <input
+                    type="number"
+                    min={2}
+                    value={editing.minOrderQty ?? 10}
+                    onChange={(e) =>
+                      setEditing({
+                        ...editing,
+                        minOrderQty: Math.max(2, Number(e.target.value) || 2),
+                      })
+                    }
+                  />
+                  <small className="muted">Wholesale buyers must order at least this many.</small>
+                </div>
+              ) : null}
+              <div className="field">
                 <label>Discount</label>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8, paddingTop: 4 }}>
                   <label>
@@ -419,10 +539,11 @@ export function AdminProductsPage() {
                           discountPercent: e.target.checked
                             ? editing.discountPercent || 10
                             : undefined,
+                          onPromotion: e.target.checked ? true : editing.onPromotion,
                         })
                       }
                     />{' '}
-                    Apply discount
+                    Apply list-price discount
                   </label>
                   {editing.applyDiscount ? (
                     <>
@@ -457,6 +578,70 @@ export function AdminProductsPage() {
                 </div>
               </div>
               <div className="field">
+                <label>Bulk / volume discount</label>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8, paddingTop: 4 }}>
+                  <label>
+                    <input
+                      type="checkbox"
+                      checked={editing.applyBulkDiscount}
+                      onChange={(e) =>
+                        setEditing({
+                          ...editing,
+                          applyBulkDiscount: e.target.checked,
+                          bulkDiscountPercent: e.target.checked
+                            ? editing.bulkDiscountPercent || 10
+                            : undefined,
+                          bulkDiscountQty: e.target.checked
+                            ? editing.bulkDiscountQty || 20
+                            : undefined,
+                          onPromotion: e.target.checked ? true : editing.onPromotion,
+                        })
+                      }
+                    />{' '}
+                    Offer % off from a quantity threshold
+                  </label>
+                  {editing.applyBulkDiscount ? (
+                    <>
+                      <input
+                        type="number"
+                        min={1}
+                        max={99}
+                        value={editing.bulkDiscountPercent ?? ''}
+                        onChange={(e) =>
+                          setEditing({
+                            ...editing,
+                            bulkDiscountPercent: e.target.value
+                              ? Number(e.target.value)
+                              : undefined,
+                          })
+                        }
+                        placeholder="% off"
+                      />
+                      <input
+                        type="number"
+                        min={2}
+                        value={editing.bulkDiscountQty ?? ''}
+                        onChange={(e) =>
+                          setEditing({
+                            ...editing,
+                            bulkDiscountQty: e.target.value
+                              ? Number(e.target.value)
+                              : undefined,
+                          })
+                        }
+                        placeholder="Every N items (e.g. 20)"
+                      />
+                      {editing.bulkDiscountPercent && editing.bulkDiscountQty ? (
+                        <small className="muted">
+                          {editing.bulkDiscountPercent}% off when buying{' '}
+                          {editing.bulkDiscountQty}+ {editing.unit || 'pcs'}
+                        </small>
+                      ) : null}
+                    </>
+                  ) : null}
+                </div>
+              </div>
+              <div className="field">
                 <label>Stock</label>
                 <input
                   type="number"
@@ -464,15 +649,76 @@ export function AdminProductsPage() {
                   onChange={(e) => setEditing({ ...editing, stock: Number(e.target.value) })}
                 />
               </div>
-              {editing.kind === 'produce' ? (
-                <div className="field">
-                  <label>Seller</label>
-                  <input
-                    value={editing.seller}
-                    onChange={(e) => setEditing({ ...editing, seller: e.target.value })}
-                  />
+              <div className="field">
+                <label>Brand name</label>
+                <input
+                  value={editing.brand || ''}
+                  onChange={(e) => setEditing({ ...editing, brand: e.target.value })}
+                  placeholder="Elliecollections"
+                />
+              </div>
+              <div className="field">
+                <label>Make / material</label>
+                <input
+                  value={editing.make || ''}
+                  onChange={(e) => setEditing({ ...editing, make: e.target.value })}
+                  placeholder="Cotton, silk blend…"
+                />
+              </div>
+              <div className="field" style={{ gridColumn: '1 / -1' }}>
+                <label>Available sizes (select all that apply)</label>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, paddingTop: 8 }}>
+                  {(editing.kind === 'apparel'
+                    ? [...APPAREL_SIZE_OPTIONS]
+                    : editing.category.toLowerCase().includes('shoe')
+                      ? [...SHOE_SIZE_OPTIONS]
+                      : [...ACCESSORY_SIZE_OPTIONS, ...SHOE_SIZE_OPTIONS]
+                  ).map((opt) => {
+                    const checked = (editing.sizes || []).includes(opt);
+                    return (
+                      <label
+                        key={opt}
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: 6,
+                          border: '1px solid var(--line, #e8dfe1)',
+                          padding: '6px 10px',
+                          background: checked ? 'var(--blush-soft, #f3e6e6)' : '#fff',
+                          cursor: 'pointer',
+                          fontSize: 13,
+                          fontWeight: 600,
+                        }}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          onChange={() => {
+                            const current = editing.sizes || [];
+                            const next = checked
+                              ? current.filter((s) => s !== opt)
+                              : [...current, opt];
+                            setEditing({
+                              ...editing,
+                              sizes: next,
+                              size: next.join(', '),
+                            });
+                          }}
+                        />
+                        {opt}
+                      </label>
+                    );
+                  })}
                 </div>
-              ) : null}
+              </div>
+              <div className="field">
+                <label>Color</label>
+                <input
+                  value={editing.color || ''}
+                  onChange={(e) => setEditing({ ...editing, color: e.target.value })}
+                  placeholder="Blush, ivory…"
+                />
+              </div>
               <div className="field">
                 <label>Location</label>
                 <input
@@ -481,7 +727,22 @@ export function AdminProductsPage() {
                 />
               </div>
               <div className="field">
-                <label>Delivery</label>
+                <label>Offer delivery</label>
+                <select
+                  value={editing.deliveryAvailable === false ? 'no' : 'yes'}
+                  onChange={(e) =>
+                    setEditing({
+                      ...editing,
+                      deliveryAvailable: e.target.value === 'yes',
+                    })
+                  }
+                >
+                  <option value="yes">Yes — deliver this item</option>
+                  <option value="no">No — pickup only</option>
+                </select>
+              </div>
+              <div className="field">
+                <label>Delivery fee</label>
                 <select
                   value={editing.deliveryMode || 'paid'}
                   onChange={(e) =>
@@ -490,9 +751,10 @@ export function AdminProductsPage() {
                       deliveryMode: e.target.value as DeliveryMode,
                     })
                   }
+                  disabled={editing.deliveryAvailable === false}
                 >
                   <option value="free">Free delivery</option>
-                  <option value="paid">Delivered at a fee</option>
+                  <option value="paid">Delivery fee applies</option>
                 </select>
               </div>
               <div className="field">
@@ -505,6 +767,7 @@ export function AdminProductsPage() {
                       deliveryPeriod: e.target.value as DeliveryPeriod,
                     })
                   }
+                  disabled={editing.deliveryAvailable === false}
                 >
                   {(Object.keys(DELIVERY_PERIOD_LABELS) as DeliveryPeriod[]).map((key) => (
                     <option key={key} value={key}>
@@ -514,12 +777,28 @@ export function AdminProductsPage() {
                 </select>
               </div>
               <div className="field">
+                <label>Promotion badge</label>
+                <input
+                  value={editing.badge || ''}
+                  onChange={(e) => setEditing({ ...editing, badge: e.target.value })}
+                  placeholder="New · Hot · Promo"
+                />
+              </div>
+              <div className="field">
                 <label>Flags</label>
-                <div style={{ display: 'flex', gap: 16, paddingTop: 10 }}>
+                <div style={{ display: 'flex', gap: 16, paddingTop: 10, flexWrap: 'wrap' }}>
                   <label>
                     <input
                       type="checkbox"
-                      checked={editing.featured}
+                      checked={!!editing.onPromotion}
+                      onChange={(e) => setEditing({ ...editing, onPromotion: e.target.checked })}
+                    />{' '}
+                    On promotion
+                  </label>
+                  <label>
+                    <input
+                      type="checkbox"
+                      checked={!!editing.featured}
                       onChange={(e) => setEditing({ ...editing, featured: e.target.checked })}
                     />{' '}
                     Featured
@@ -633,6 +912,14 @@ export function AdminProductsPage() {
                     <td>{p.kind}</td>
                     <td>
                       {formatUgx(p.priceUgx)} / {p.unit}
+                      <div className="muted" style={{ fontSize: 12 }}>
+                        {p.saleMode === 'wholesale' ? 'Wholesale' : 'Retail'}
+                        {p.minOrderQty && p.minOrderQty > 1 ? ` · min ${p.minOrderQty}` : ''}
+                        {p.discountPercent ? ` · −${p.discountPercent}%` : ''}
+                        {p.bulkDiscountPercent && p.bulkDiscountQty
+                          ? ` · ${p.bulkDiscountPercent}% @ ${p.bulkDiscountQty}+`
+                          : ''}
+                      </div>
                     </td>
                     <td>{p.stock}</td>
                     <td>
@@ -736,7 +1023,7 @@ export function AdminProductsPage() {
               <div>
                 <span className="admin-detail-label">Kind</span>
                 <div className="admin-detail-value">
-                  {viewing.kind === 'produce' ? 'Produce' : 'Farm input'}
+                  {viewing.kind === 'apparel' ? 'Apparel' : 'Accessories'}
                 </div>
               </div>
               <div>
@@ -766,6 +1053,34 @@ export function AdminProductsPage() {
                 <div className="admin-detail-value">{viewing.stock.toLocaleString()}</div>
               </div>
               <div>
+                <span className="admin-detail-label">Brand</span>
+                <div className="admin-detail-value">{viewing.brand || 'Elliecollections'}</div>
+              </div>
+              <div>
+                <span className="admin-detail-label">Make</span>
+                <div className="admin-detail-value">{viewing.make || '—'}</div>
+              </div>
+              <div>
+                <span className="admin-detail-label">Sizes</span>
+                <div className="admin-detail-value">
+                  {(viewing.sizes && viewing.sizes.length
+                    ? viewing.sizes.join(', ')
+                    : viewing.size) || '—'}
+                </div>
+              </div>
+              <div>
+                <span className="admin-detail-label">Color</span>
+                <div className="admin-detail-value">{viewing.color || '—'}</div>
+              </div>
+              <div>
+                <span className="admin-detail-label">Promotion</span>
+                <div className="admin-detail-value">
+                  {viewing.onPromotion || viewing.badge
+                    ? `${viewing.onPromotion ? 'On promo' : ''}${viewing.badge ? ` · ${viewing.badge}` : ''}`
+                    : '—'}
+                </div>
+              </div>
+              <div>
                 <span className="admin-detail-label">Status</span>
                 <div className="admin-detail-value">
                   <span className={`badge ${viewing.active ? 'badge-green' : 'badge-muted'}`}>
@@ -774,12 +1089,6 @@ export function AdminProductsPage() {
                   {viewing.featured ? ' · featured' : ''}
                 </div>
               </div>
-              {viewing.kind === 'produce' ? (
-                <div>
-                  <span className="admin-detail-label">Seller</span>
-                  <div className="admin-detail-value">{viewing.seller || '—'}</div>
-                </div>
-              ) : null}
               <div>
                 <span className="admin-detail-label">Ships from</span>
                 <div className="admin-detail-value">{viewing.location || '—'}</div>
@@ -787,9 +1096,11 @@ export function AdminProductsPage() {
               <div>
                 <span className="admin-detail-label">Delivery</span>
                 <div className="admin-detail-value">
-                  {(viewing.deliveryMode || 'paid') === 'free'
-                    ? 'Free delivery'
-                    : 'Delivered at a fee'}
+                  {viewing.deliveryAvailable === false
+                    ? 'Pickup only'
+                    : (viewing.deliveryMode || 'paid') === 'free'
+                      ? 'Free delivery'
+                      : 'Delivery fee applies'}
                 </div>
               </div>
               <div>

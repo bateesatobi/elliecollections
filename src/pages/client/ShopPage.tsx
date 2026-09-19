@@ -1,8 +1,10 @@
 import { useMemo, useState } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 import { ProductCard } from '../../components/ProductCard';
+import { PromoBanner } from '../../components/PromoBanner';
+import { Seo } from '../../components/Seo';
 import { useMarket } from '../../store/MarketStore';
-import type { ProductKind } from '../../types';
+import { PRODUCT_KIND_LABELS, type ProductKind } from '../../types';
 
 type SortKey = 'featured' | 'price-asc' | 'price-desc' | 'newest';
 
@@ -13,13 +15,43 @@ export function ShopPage() {
   const q = params.get('q') ?? '';
   const sort = (params.get('sort') as SortKey) || 'featured';
   const inStockOnly = params.get('stock') === '1';
+  const promoOnly = params.get('promo') === '1';
+  const brand = params.get('brand') ?? '';
+  const color = params.get('color') ?? '';
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
+
+  const shopTitle =
+    kind !== 'all' && PRODUCT_KIND_LABELS[kind as ProductKind]
+      ? PRODUCT_KIND_LABELS[kind as ProductKind]
+      : promoOnly
+        ? 'Promotions'
+        : q
+          ? `Search: ${q}`
+          : 'Shop';
+  const shopPath = `/shop${params.toString() ? `?${params.toString()}` : ''}`;
+
+  const brands = useMemo(() => {
+    const set = new Set(
+      products.filter((p) => p.active && p.brand).map((p) => (p.brand || '').trim()).filter(Boolean),
+    );
+    return Array.from(set).sort((a, b) => a.localeCompare(b));
+  }, [products]);
+
+  const colors = useMemo(() => {
+    const set = new Set(
+      products.filter((p) => p.active && p.color).map((p) => (p.color || '').trim()).filter(Boolean),
+    );
+    return Array.from(set).sort((a, b) => a.localeCompare(b));
+  }, [products]);
 
   const list = useMemo(() => {
     let rows = products
       .filter((p) => p.active)
       .filter((p) => (kind === 'all' ? true : p.kind === kind))
       .filter((p) => (inStockOnly ? p.stock > 0 : true))
+      .filter((p) => (promoOnly ? p.onPromotion || !!p.badge || !!p.discountPercent : true))
+      .filter((p) => (brand ? (p.brand || '').toLowerCase() === brand.toLowerCase() : true))
+      .filter((p) => (color ? (p.color || '').toLowerCase() === color.toLowerCase() : true))
       .filter((p) => {
         const s = q.trim().toLowerCase();
         if (!s) return true;
@@ -27,7 +59,11 @@ export function ShopPage() {
           p.title.toLowerCase().includes(s) ||
           p.category.toLowerCase().includes(s) ||
           p.location.toLowerCase().includes(s) ||
-          p.seller.toLowerCase().includes(s)
+          p.seller.toLowerCase().includes(s) ||
+          (p.brand || '').toLowerCase().includes(s) ||
+          (p.color || '').toLowerCase().includes(s) ||
+          (p.size || '').toLowerCase().includes(s) ||
+          (p.make || '').toLowerCase().includes(s)
         );
       });
 
@@ -39,7 +75,7 @@ export function ShopPage() {
     else rows.sort((a, b) => Number(b.featured) - Number(a.featured));
 
     return rows;
-  }, [products, kind, q, sort, inStockOnly]);
+  }, [products, kind, q, sort, inStockOnly, promoOnly, brand, color]);
 
   const patch = (key: string, value: string | null) => {
     const n = new URLSearchParams(params);
@@ -51,156 +87,164 @@ export function ShopPage() {
   const setKind = (next: string) => patch('kind', next === 'all' ? null : next);
 
   const title =
-    kind === 'produce' ? 'Fresh produce' : kind === 'input' ? 'Farm inputs' : 'Results';
+    kind === 'apparel' || kind === 'accessories'
+      ? PRODUCT_KIND_LABELS[kind]
+      : 'The collection';
 
   const Filters = (
     <>
-      <h3>Department</h3>
-      <div className="filter-group">
-        {[
-          { id: 'all', label: 'All categories' },
-          { id: 'produce', label: 'Produce' },
-          { id: 'input', label: 'Farm inputs' },
-        ].map((c) => (
-          <label key={c.id}>
-            <input
-              type="radio"
-              name="kind"
-              checked={kind === c.id}
-              onChange={() => setKind(c.id)}
-            />
-            {c.label}
-          </label>
-        ))}
-      </div>
-      <div className="filter-group">
-        <h3>Availability</h3>
-        <label>
-          <input
-            type="checkbox"
-            checked={inStockOnly}
-            onChange={(e) => patch('stock', e.target.checked ? '1' : null)}
-          />
-          In stock only
+      <h3>Shop by</h3>
+      {(
+        [
+          { id: 'all', label: 'All' },
+          { id: 'apparel', label: 'Apparel' },
+          { id: 'accessories', label: 'Accessories' },
+        ] as const
+      ).map((c) => (
+        <button
+          key={c.id}
+          type="button"
+          className={`ec-filter-chip ${kind === c.id ? 'active' : ''}`}
+          onClick={() => setKind(c.id)}
+        >
+          {c.label}
+        </button>
+      ))}
+      <button
+        type="button"
+        className={`ec-filter-chip ${inStockOnly ? 'active' : ''}`}
+        onClick={() => patch('stock', inStockOnly ? null : '1')}
+      >
+        In stock only
+      </button>
+      <button
+        type="button"
+        className={`ec-filter-chip ${promoOnly ? 'active' : ''}`}
+        onClick={() => patch('promo', promoOnly ? null : '1')}
+      >
+        On promotion
+      </button>
+      {brands.length > 0 ? (
+        <label className="field" style={{ marginTop: '0.5rem' }}>
+          <span>Brand</span>
+          <select
+            value={brand}
+            onChange={(e) => patch('brand', e.target.value || null)}
+          >
+            <option value="">All brands</option>
+            {brands.map((b) => (
+              <option key={b} value={b}>
+                {b}
+              </option>
+            ))}
+          </select>
         </label>
-      </div>
-      <div className="filter-group">
-        <h3>Sort by</h3>
+      ) : null}
+      {colors.length > 0 ? (
+        <label className="field">
+          <span>Color</span>
+          <select
+            value={color}
+            onChange={(e) => patch('color', e.target.value || null)}
+          >
+            <option value="">All colors</option>
+            {colors.map((c) => (
+              <option key={c} value={c}>
+                {c}
+              </option>
+            ))}
+          </select>
+        </label>
+      ) : null}
+      <label className="field" style={{ marginTop: '0.5rem' }}>
+        <span>Sort</span>
         <select
           value={sort}
           onChange={(e) => patch('sort', e.target.value === 'featured' ? null : e.target.value)}
-          style={{ width: '100%', padding: '8px 10px', borderRadius: 8 }}
         >
           <option value="featured">Featured</option>
           <option value="price-asc">Price: low to high</option>
           <option value="price-desc">Price: high to low</option>
           <option value="newest">Newest</option>
         </select>
-      </div>
-      <div className="filter-group">
-        <h3>Need scanning tools?</h3>
-        <p style={{ margin: '0 0 8px', fontSize: 13, color: 'var(--amz-muted)' }}>
-          Crop scan, soil pH, yield map & weather are in the AgriSense mobile app.
-        </p>
-        <Link to="/download-app" style={{ color: 'var(--amz-link)', fontWeight: 700, fontSize: 13 }}>
-          Get the app →
-        </Link>
-      </div>
+      </label>
     </>
   );
 
   return (
-    <div className="amz-shop">
-      <aside className="amz-filters">{Filters}</aside>
+    <div className="ec-shop container-wide">
+      <Seo
+        title={shopTitle}
+        description={`Browse ${shopTitle.toLowerCase()} at Elliecollections — feminine fashion, apparel, and accessories with delivery across East Africa.`}
+        path={shopPath}
+      />
+      <PromoBanner />
+      <div className="ec-shop-layout">
+        <aside className="ec-filters">{Filters}</aside>
 
-      <section>
-        <div className="amz-banner">
-          <div>
-            <strong>AgriSense Market</strong>
-            <div style={{ fontSize: 13, opacity: 0.9 }}>
-              Uganda produce & farm inputs — pay only at checkout
+        <section>
+          <div className="ec-shop-head">
+            <div>
+              <p className="eyebrow">Elliecollections</p>
+              <h1>
+                {q ? `“${q}”` : title}
+                {kind !== 'all' && q ? ` in ${title}` : ''}
+              </h1>
+              <p className="muted">
+                {list.length} piece{list.length === 1 ? '' : 's'}
+                {q ? ` for “${q}”` : ''}
+              </p>
             </div>
-          </div>
-          <Link to="/download-app">Download farm app</Link>
-        </div>
-
-        <div className="amz-mobile-filter-bar">
-          <button type="button" className="amz-filter-chip" onClick={() => setMobileFiltersOpen(true)}>
-            Filters & sort
-          </button>
-          <button
-            type="button"
-            className={`amz-filter-chip ${kind === 'produce' ? 'active' : ''}`}
-            onClick={() => setKind(kind === 'produce' ? 'all' : 'produce')}
-          >
-            Produce
-          </button>
-          <button
-            type="button"
-            className={`amz-filter-chip ${kind === 'input' ? 'active' : ''}`}
-            onClick={() => setKind(kind === 'input' ? 'all' : 'input')}
-          >
-            Inputs
-          </button>
-          <button
-            type="button"
-            className={`amz-filter-chip ${inStockOnly ? 'active' : ''}`}
-            onClick={() => patch('stock', inStockOnly ? null : '1')}
-          >
-            In stock
-          </button>
-        </div>
-
-        <div className="amz-results-head">
-          <div>
-            <h1>
-              {q ? `“${q}”` : title}
-              {kind !== 'all' && q ? ` in ${title}` : ''}
-            </h1>
-            <p>
-              {list.length} result{list.length === 1 ? '' : 's'}
-              {q ? ` for “${q}”` : ''}
-            </p>
-          </div>
-          <label className="amz-sort-desktop">
-            Sort:{' '}
-            <select
-              value={sort}
-              onChange={(e) => patch('sort', e.target.value === 'featured' ? null : e.target.value)}
+            <button
+              type="button"
+              className="btn btn-secondary"
+              style={{ display: 'none' }}
+              onClick={() => setMobileFiltersOpen(true)}
             >
-              <option value="featured">Featured</option>
-              <option value="price-asc">Price: low to high</option>
-              <option value="price-desc">Price: high to low</option>
-              <option value="newest">Newest</option>
-            </select>
-          </label>
-        </div>
+              Filters
+            </button>
+          </div>
 
-        {list.length === 0 ? (
-          <div className="empty" style={{ background: '#fff', border: '1px solid #d5d9d9' }}>
-            No products match. Try another search or clear filters.
-          </div>
-        ) : (
-          <div className="amz-grid">
-            {list.map((p) => (
-              <ProductCard key={p.id} product={p} />
-            ))}
-          </div>
-        )}
-      </section>
+          <style>{`
+            @media (max-width: 860px) {
+              .ec-shop .ec-shop-head .btn { display: inline-flex !important; }
+            }
+          `}</style>
+
+          {list.length === 0 ? (
+            <div className="ec-empty">No pieces match. Try another search or clear filters.</div>
+          ) : (
+            <div className="ec-product-grid">
+              {list.map((p) => (
+                <ProductCard key={p.id} product={p} />
+              ))}
+            </div>
+          )}
+        </section>
+      </div>
 
       {mobileFiltersOpen ? (
-        <div className="amz-filter-sheet" role="dialog" aria-modal="true">
-          <button
-            type="button"
-            className="amz-filter-sheet-backdrop"
-            aria-label="Close filters"
-            onClick={() => setMobileFiltersOpen(false)}
-          />
-          <div className="amz-filter-sheet-panel">
-            <div className="amz-filter-sheet-head">
+        <div
+          role="dialog"
+          aria-modal="true"
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 50,
+            background: 'rgba(28,20,24,0.45)',
+            display: 'grid',
+            alignItems: 'end',
+          }}
+          onClick={() => setMobileFiltersOpen(false)}
+        >
+          <div
+            className="ec-filters"
+            style={{ margin: 0, borderRadius: '16px 16px 0 0' }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <strong>Filters & sort</strong>
-              <button type="button" onClick={() => setMobileFiltersOpen(false)}>
+              <button type="button" className="btn btn-primary" onClick={() => setMobileFiltersOpen(false)}>
                 Done
               </button>
             </div>
