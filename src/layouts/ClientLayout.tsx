@@ -5,6 +5,7 @@ import { useMarket } from '../store/MarketStore';
 import { useCurrency } from '../store/CurrencyStore';
 import { captureReferralFromUrl } from '../utils/referral';
 import { loadWishlist } from '../utils/wishlist';
+import { SHOP, whatsappHref } from '../utils/shopContact';
 import './client.css';
 
 export function ClientLayout() {
@@ -15,6 +16,7 @@ export function ClientLayout() {
   const [query, setQuery] = useState(params.get('q') ?? '');
   const [scrolled, setScrolled] = useState(false);
   const [wishCount, setWishCount] = useState(() => loadWishlist().length);
+  const waHome = whatsappHref('Hi Elliecollections 👋 I have a question.');
 
   useEffect(() => {
     captureReferralFromUrl();
@@ -102,9 +104,9 @@ export function ClientLayout() {
                 </select>
               </label>
 
-              <Link to={customer ? '/orders' : '/checkout'} className="ec-account">
+              <Link to={customer ? '/orders' : '/signin'} className="ec-account">
                 <User size={18} />
-                <span>{customer ? customer.name.split(' ')[0] : 'Sign in'}</span>
+                <span>{customer ? customer.name.split(' ')[0] : 'Account'}</span>
               </Link>
 
               {customer && (
@@ -136,7 +138,6 @@ export function ClientLayout() {
             <NavLink to="/track">Track order</NavLink>
             <NavLink to="/wishlist">Wishlist</NavLink>
             <NavLink to="/refer">Refer a friend</NavLink>
-            <NavLink to="/admin/login">Admin</NavLink>
           </nav>
         </div>
       </header>
@@ -157,6 +158,11 @@ export function ClientLayout() {
           <div>
             <h4>Elliecollections</h4>
             <p>Feminine fashion curated for the modern woman — apparel, accessories, and beauty.</p>
+            <p className="ec-footer-shop">
+              {SHOP.address}, {SHOP.location}
+              <br />
+              {SHOP.hours}
+            </p>
           </div>
           <div>
             <h4>Shop</h4>
@@ -167,12 +173,17 @@ export function ClientLayout() {
           </div>
           <div>
             <h4>Help</h4>
-            <Link to="/orders">Your orders</Link>
-            <Link to="/refer">Referral links</Link>
-            <Link to="/checkout">Checkout</Link>
-            <p className="muted" style={{ color: 'rgba(255,255,255,0.55)' }}>
-              Sign in only when you are ready to pay.
-            </p>
+            <Link to="/track">Track order by phone</Link>
+            <Link to="/size-guide">Size guide</Link>
+            <Link to="/returns">Returns &amp; exchanges</Link>
+            <Link to="/checkout">Checkout — phone only</Link>
+            <Link to="/signin">Continue with phone</Link>
+            {waHome ? (
+              <a href={waHome} target="_blank" rel="noreferrer">
+                WhatsApp {SHOP.phoneDisplay}
+              </a>
+            ) : null}
+            <a href={`tel:+${SHOP.whatsapp}`}>{SHOP.phoneDisplay}</a>
           </div>
         </div>
         <div className="ec-footer-brand">Elliecollections</div>

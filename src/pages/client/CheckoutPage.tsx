@@ -1,6 +1,9 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { PesapalPaymentPicker } from '../../components/PesapalPaymentPicker';
+import { PhoneInput } from '../../components/PhoneInput';
+import { TrustStrip } from '../../components/TrustStrip';
+import { Seo } from '../../components/Seo';
 import {
   chargeViaPesapal,
   type PesapalMethod,
@@ -8,46 +11,36 @@ import {
 import { formatUgx, useMarket } from '../../store/MarketStore';
 import { useCurrency } from '../../store/CurrencyStore';
 import type { FulfillmentMode } from '../../types';
-import { Seo } from '../../components/Seo';
+import { SHOP, orderConfirmWhatsAppMessage, whatsappHref } from '../../utils/shopContact';
+import { validateMobilePhone } from '../../utils/phone';
 
-const SHOP = {
-  name: 'Elliecollections Boutique',
-  address: 'Plot 12, Acacia Avenue, Kololo',
-  location: 'Kampala',
-  hours: 'Mon–Sat 9:00–18:00 · Sun 10:00–16:00',
-};
+function isoFromCurrency(code: string) {
+  const map: Record<string, string> = {
+    UGX: 'UG',
+    KES: 'KE',
+    TZS: 'TZ',
+    RWF: 'RW',
+    SSP: 'SS',
+    CDF: 'CD',
+  };
+  return map[code] || 'UG';
+}
 
 export function CheckoutPage() {
   const navigate = useNavigate();
-  const {
-    customer,
-    cart,
-    cartTotal,
-    products,
-    loginCustomer,
-    registerCustomer,
-    placeOrder,
-  } = useMarket();
-  const { formatMoney, currency } = useCurrency();
+  const { customer, cart, cartTotal, products, placeOrder } = useMarket();
+  const { formatMoney, currency, detectedCountry } = useCurrency();
+  const defaultIso = detectedCountry || isoFromCurrency(currency.code);
 
-  const [mode, setMode] = useState<'login' | 'register'>('login');
-  const [authError, setAuthError] = useState<string | null>(null);
   const [orderError, setOrderError] = useState<string | null>(null);
   const [successId, setSuccessId] = useState<string | null>(null);
+  const [successPhone, setSuccessPhone] = useState('');
   const [successRef, setSuccessRef] = useState<string | null>(null);
   const [successMethod, setSuccessMethod] = useState<string | null>(null);
   const [successTotal, setSuccessTotal] = useState<number | null>(null);
   const [successCash, setSuccessCash] = useState(false);
   const [successFulfillment, setSuccessFulfillment] = useState<FulfillmentMode>('delivery');
   const [paying, setPaying] = useState(false);
-
-  const [loginForm, setLoginForm] = useState({ id: '', password: '' });
-  const [regForm, setRegForm] = useState({
-    name: '',
-    email: '',
-    phone: '',
-    password: '',
-  });
 
   const [fulfillment, setFulfillment] = useState<FulfillmentMode>('delivery');
   const [recipient, setRecipient] = useState({
@@ -57,7 +50,7 @@ export function CheckoutPage() {
     location: '',
   });
 
-  const [payMethod, setPayMethod] = useState<PesapalMethod>('mtn');
+  const [payMethod, setPayMethod] = useState<PesapalMethod>('cash');
   const [momoPhone, setMomoPhone] = useState('');
   const [card, setCard] = useState({
     name: '',
@@ -81,14 +74,30 @@ export function CheckoutPage() {
     return (
       <div className="container section">
         <h2>Nothing to checkout</h2>
-        <Link to="/" className="btn btn-primary">
-          Browse marketplace
-        </Link>
+        <p className="muted">Add items to your bag first.</p>
+        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginTop: 8 }}>
+          <Link to="/shop" className="btn btn-primary">
+            Browse shop
+          </Link>
+          <Link to="/track" className="btn btn-secondary">
+            Track an order
+          </Link>
+        </div>
       </div>
     );
   }
 
   if (successId) {
+    const trackHref = `/track?phone=${encodeURIComponent(successPhone)}&order=${encodeURIComponent(successId)}`;
+    const wa = whatsappHref(
+      orderConfirmWhatsAppMessage({
+        orderId: successId,
+        phone: successPhone,
+        fulfillment: successFulfillment,
+        totalLabel: successTotal != null ? formatMoney(successTotal) : '',
+        cash: successCash,
+      }),
+    );
     return (
       <div className="container section">
         <div className="panel" style={{ maxWidth: 560 }}>
@@ -97,7 +106,7 @@ export function CheckoutPage() {
               ? successFulfillment === 'pickup'
                 ? 'Order placed — pay in cash at the shop'
                 : 'Order placed — pay cash on delivery'
-              : 'Pesapal payment completed'}
+              : 'Payment completed'}
           </div>
           <h2>Order {successId}</h2>
           <p className="muted" style={{ marginBottom: 8 }}>
@@ -131,46 +140,56 @@ export function CheckoutPage() {
           <p className="muted">
             Reference: <strong>{successRef}</strong>
           </p>
+          <div className="alert alert-ok" style={{ marginTop: 8 }}>
+            <strong>Next step:</strong> tap WhatsApp so we confirm your order and call if the rider
+            needs you. Keep your phone on.
+          </div>
           <p className="muted" style={{ fontSize: 13 }}>
-            You can track fulfilment anytime under Your orders.
+            Track anytime with your phone number — no password.
           </p>
           <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-            <Link to={`/orders/${successId}`} className="btn btn-primary">
-              Track this order
+            {wa ? (
+              <a href={wa} className="btn btn-primary" target="_blank" rel="noreferrer">
+                Confirm on WhatsApp
+              </a>
+            ) : null}
+            <Link to={trackHref} className="btn btn-secondary">
+              Track my orders
             </Link>
-            <Link to="/orders" className="btn btn-secondary">
-              All orders
-            </Link>
-            <Link to="/" className="btn btn-secondary">
+            <Link to="/shop" className="btn btn-secondary">
               Keep shopping
             </Link>
           </div>
+          {!customer ? (
+            <p className="muted" style={{ marginTop: 16, fontSize: 13 }}>
+              Want faster reorders?{' '}
+              <Link to="/signin?next=/orders">Continue with this phone</Link>
+            </p>
+          ) : (
+            <p className="muted" style={{ marginTop: 16, fontSize: 13 }}>
+              <Link to="/orders">View all your orders</Link>
+            </p>
+          )}
         </div>
       </div>
     );
   }
 
-  const deliveryFee =
-    fulfillment === 'pickup' ? 0 : cartTotal >= 200000 ? 0 : 15000;
+  const deliveryFee = fulfillment === 'pickup' ? 0 : cartTotal >= 200000 ? 0 : 15000;
   const total = cartTotal + deliveryFee;
-
-  const onLogin = async (e: FormEvent) => {
-    e.preventDefault();
-    setAuthError(await loginCustomer(loginForm.id, loginForm.password));
-  };
-
-  const onRegister = async (e: FormEvent) => {
-    e.preventDefault();
-    setAuthError(await registerCustomer(regForm));
-  };
 
   const onPay = async (e: FormEvent) => {
     e.preventDefault();
-    if (!customer || paying) return;
+    if (paying) return;
     setOrderError(null);
 
     if (!recipient.name.trim() || !recipient.phone.trim()) {
-      setOrderError('Enter the recipient name and phone number.');
+      setOrderError('Enter your name and phone number.');
+      return;
+    }
+    const phoneErr = validateMobilePhone(recipient.phone, defaultIso);
+    if (phoneErr) {
+      setOrderError(phoneErr);
       return;
     }
     if (fulfillment === 'delivery') {
@@ -183,7 +202,7 @@ export function CheckoutPage() {
     setPaying(true);
 
     try {
-      const phone = momoPhone.trim() || customer.phone;
+      const phone = momoPhone.trim() || recipient.phone.trim();
       const charged = await chargeViaPesapal({
         amountUgx: total,
         method: payMethod,
@@ -192,7 +211,7 @@ export function CheckoutPage() {
         cardNumber: card.number,
         cardExpiry: card.expiry,
         cardCvv: card.cvv,
-        customerEmail: customer.email,
+        customerEmail: customer?.email || '',
         description: `Elliecollections order (${cart.length} lines)`,
       });
 
@@ -218,6 +237,9 @@ export function CheckoutPage() {
         fulfillmentMode: fulfillment,
         recipientName: recipient.name.trim(),
         recipientPhone: recipient.phone.trim(),
+        customerName: recipient.name.trim(),
+        customerPhone: recipient.phone.trim(),
+        customerEmail: customer?.email,
       });
 
       if (result.ok === false) {
@@ -226,6 +248,7 @@ export function CheckoutPage() {
       }
 
       setSuccessId(result.order.id);
+      setSuccessPhone(recipient.phone.trim());
       setSuccessRef(charged.paymentRef);
       setSuccessMethod(charged.methodLabel);
       setSuccessTotal(result.order.totalUgx);
@@ -242,293 +265,205 @@ export function CheckoutPage() {
       <Seo title="Checkout" path="/checkout" noIndex />
       <h2>Checkout</h2>
       <p className="muted">
-        Sign in, choose delivery or shop pickup, then pay with Pesapal or cash.
+        No account needed — enter your name and phone, choose delivery or shop pickup, then pay
+        with cash, MTN, or Airtel.
       </p>
 
-      <div className="amz-checkout-grid">
+      <TrustStrip compact />
+
+      <div className="amz-checkout-grid" style={{ marginTop: 16 }}>
         <div className="panel">
-          {!customer ? (
-            <>
-              <div className="chip-row" style={{ marginBottom: 12 }}>
-                <button
-                  type="button"
-                  className={`chip ${mode === 'login' ? 'active' : ''}`}
-                  onClick={() => setMode('login')}
-                >
-                  Sign in
-                </button>
-                <button
-                  type="button"
-                  className={`chip ${mode === 'register' ? 'active' : ''}`}
-                  onClick={() => setMode('register')}
-                >
-                  Create account
-                </button>
-              </div>
-
-              {authError && <div className="alert alert-error">{authError}</div>}
-
-              {mode === 'login' ? (
-                <form onSubmit={onLogin}>
-                  <div className="field">
-                    <label>Phone or email</label>
-                    <input
-                      value={loginForm.id}
-                      onChange={(e) => setLoginForm({ ...loginForm, id: e.target.value })}
-                      placeholder="amina@example.com"
-                    />
-                  </div>
-                  <div className="field">
-                    <label>Password</label>
-                    <input
-                      type="password"
-                      value={loginForm.password}
-                      onChange={(e) => setLoginForm({ ...loginForm, password: e.target.value })}
-                      placeholder="shop123"
-                    />
-                  </div>
-                  <button type="submit" className="btn btn-primary">
-                    Continue to fulfilment
-                  </button>
-                  <p className="muted" style={{ marginTop: 10, fontSize: 13 }}>
-                    Demo: amina@example.com / shop123
-                  </p>
-                </form>
-              ) : (
-                <form onSubmit={onRegister}>
-                  <div className="field">
-                    <label>Full name</label>
-                    <input
-                      value={regForm.name}
-                      onChange={(e) => setRegForm({ ...regForm, name: e.target.value })}
-                    />
-                  </div>
-                  <div className="field">
-                    <label>Email</label>
-                    <input
-                      type="email"
-                      value={regForm.email}
-                      onChange={(e) => setRegForm({ ...regForm, email: e.target.value })}
-                    />
-                  </div>
-                  <div className="field">
-                    <label>Phone</label>
-                    <input
-                      value={regForm.phone}
-                      onChange={(e) => setRegForm({ ...regForm, phone: e.target.value })}
-                    />
-                  </div>
-                  <div className="field">
-                    <label>Password</label>
-                    <input
-                      type="password"
-                      value={regForm.password}
-                      onChange={(e) => setRegForm({ ...regForm, password: e.target.value })}
-                    />
-                  </div>
-                  <button type="submit" className="btn btn-primary">
-                    Create & continue
-                  </button>
-                </form>
-              )}
-            </>
-          ) : (
-            <form onSubmit={onPay}>
+          <form onSubmit={onPay}>
+            {customer ? (
               <div className="alert alert-ok" style={{ marginBottom: 12 }}>
                 Signed in as {customer.name} ({customer.phone})
               </div>
-              {orderError && <div className="alert alert-error">{orderError}</div>}
-
-              <h3 style={{ margin: '0 0 0.65rem', fontSize: '1.05rem' }}>How will you receive it?</h3>
-              <div className="chip-row" style={{ marginBottom: 14 }}>
-                <button
-                  type="button"
-                  className={`chip ${fulfillment === 'delivery' ? 'active' : ''}`}
-                  disabled={paying}
-                  onClick={() => setFulfillment('delivery')}
-                >
-                  Deliver to address
-                </button>
-                <button
-                  type="button"
-                  className={`chip ${fulfillment === 'pickup' ? 'active' : ''}`}
-                  disabled={paying}
-                  onClick={() => setFulfillment('pickup')}
-                >
-                  Pick up from shop
-                </button>
+            ) : (
+              <div className="alert alert-ok" style={{ marginBottom: 12 }}>
+                Guest checkout · Track later with your phone number.{' '}
+                <Link to="/signin?next=/checkout">Have an account? Sign in</Link>
               </div>
+            )}
+            {orderError ? <div className="alert alert-error">{orderError}</div> : null}
 
-              <h3 style={{ margin: '0 0 0.65rem', fontSize: '1.05rem' }}>
-                {fulfillment === 'pickup' ? 'Who is collecting?' : 'Who is receiving?'}
-              </h3>
-              <div className="field">
-                <label>Full name</label>
-                <input
-                  value={recipient.name}
-                  onChange={(e) => setRecipient({ ...recipient, name: e.target.value })}
-                  placeholder="Recipient full name"
-                  required
-                  disabled={paying}
-                />
-              </div>
-              <div className="field">
-                <label>Phone</label>
-                <input
-                  value={recipient.phone}
-                  onChange={(e) => setRecipient({ ...recipient, phone: e.target.value })}
-                  placeholder="0772 123 456"
-                  inputMode="tel"
-                  required
-                  disabled={paying}
-                />
-              </div>
-
-              {fulfillment === 'delivery' ? (
-                <>
-                  <div className="field">
-                    <label>Delivery address</label>
-                    <input
-                      value={recipient.address}
-                      onChange={(e) => setRecipient({ ...recipient, address: e.target.value })}
-                      placeholder="Street, building, landmark"
-                      required
-                      disabled={paying}
-                    />
-                  </div>
-                  <div className="field">
-                    <label>Location / district</label>
-                    <input
-                      value={recipient.location}
-                      onChange={(e) => setRecipient({ ...recipient, location: e.target.value })}
-                      placeholder="Kampala, Ntinda, Tororo…"
-                      required
-                      disabled={paying}
-                    />
-                  </div>
-                </>
-              ) : (
-                <div className="alert alert-ok" style={{ marginBottom: 14 }}>
-                  <strong>{SHOP.name}</strong>
-                  <div style={{ marginTop: 4 }}>
-                    {SHOP.address}, {SHOP.location}
-                  </div>
-                  <div className="muted" style={{ marginTop: 4, fontSize: 13 }}>
-                    {SHOP.hours}
-                  </div>
-                  <p className="muted" style={{ margin: '8px 0 0', fontSize: 12 }}>
-                    Bring your order reference and a matching ID / phone when collecting.
-                  </p>
-                </div>
-              )}
-
-              <PesapalPaymentPicker
-                value={payMethod}
-                onChange={setPayMethod}
+            <h3 style={{ margin: '0 0 0.65rem', fontSize: '1.05rem' }}>How will you receive it?</h3>
+            <div className="chip-row" style={{ marginBottom: 14 }}>
+              <button
+                type="button"
+                className={`chip ${fulfillment === 'delivery' ? 'active' : ''}`}
                 disabled={paying}
-                fulfillmentMode={fulfillment}
-              />
+                onClick={() => setFulfillment('delivery')}
+              >
+                Deliver to address
+              </button>
+              <button
+                type="button"
+                className={`chip ${fulfillment === 'pickup' ? 'active' : ''}`}
+                disabled={paying}
+                onClick={() => setFulfillment('pickup')}
+              >
+                Pick up from shop
+              </button>
+            </div>
 
-              {payMethod === 'mtn' || payMethod === 'airtel' ? (
+            <h3 style={{ margin: '0 0 0.65rem', fontSize: '1.05rem' }}>
+              {fulfillment === 'pickup' ? 'Who is collecting?' : 'Your details'}
+            </h3>
+            <div className="field">
+              <label>Full name</label>
+              <input
+                value={recipient.name}
+                onChange={(e) => setRecipient({ ...recipient, name: e.target.value })}
+                placeholder="Your full name"
+                required
+                disabled={paying}
+                autoComplete="name"
+              />
+            </div>
+            <PhoneInput
+              id="checkout-phone"
+              label="Phone (WhatsApp / MoMo)"
+              value={recipient.phone}
+              onChange={(v) => setRecipient({ ...recipient, phone: v })}
+              defaultIso={defaultIso}
+              required
+              disabled={paying}
+              hint="UG +256 · KE +254 · TZ +255 · RW +250 · SS +211 · CD +243 — used for delivery & tracking"
+            />
+
+            {fulfillment === 'delivery' ? (
+              <>
                 <div className="field">
-                  <label>
-                    {payMethod === 'mtn' ? 'MTN MoMo number' : 'Airtel Money number'}
-                  </label>
+                  <label>Delivery address</label>
                   <input
-                    value={momoPhone}
-                    onChange={(e) => setMomoPhone(e.target.value)}
-                    placeholder="0772 123 456"
-                    inputMode="tel"
+                    value={recipient.address}
+                    onChange={(e) => setRecipient({ ...recipient, address: e.target.value })}
+                    placeholder="Street, building, landmark"
+                    required
                     disabled={paying}
                   />
-                  <p className="muted" style={{ margin: '6px 0 0', fontSize: 12 }}>
-                    Pesapal will send a payment prompt to this phone.
-                  </p>
                 </div>
-              ) : payMethod === 'card' ? (
-                <>
+                <div className="field">
+                  <label>Location / district</label>
+                  <input
+                    value={recipient.location}
+                    onChange={(e) => setRecipient({ ...recipient, location: e.target.value })}
+                    placeholder="Kampala, Ntinda, Entebbe…"
+                    required
+                    disabled={paying}
+                  />
+                </div>
+              </>
+            ) : (
+              <div className="alert alert-ok" style={{ marginBottom: 14 }}>
+                <strong>{SHOP.name}</strong>
+                <div style={{ marginTop: 4 }}>
+                  {SHOP.address}, {SHOP.location}
+                </div>
+                <div className="muted" style={{ marginTop: 4, fontSize: 13 }}>
+                  {SHOP.hours}
+                </div>
+                <p className="muted" style={{ margin: '8px 0 0', fontSize: 12 }}>
+                  Bring your order reference and matching ID / phone when collecting.
+                </p>
+              </div>
+            )}
+
+            <PesapalPaymentPicker
+              value={payMethod}
+              onChange={setPayMethod}
+              disabled={paying}
+              fulfillmentMode={fulfillment}
+            />
+
+            {payMethod === 'mtn' || payMethod === 'airtel' ? (
+              <PhoneInput
+                id="checkout-momo"
+                label={payMethod === 'mtn' ? 'MTN MoMo number' : 'Airtel Money number'}
+                value={momoPhone || recipient.phone}
+                onChange={setMomoPhone}
+                defaultIso={defaultIso}
+                disabled={paying}
+                hint="Pesapal will send a payment prompt to this phone."
+              />
+            ) : payMethod === 'card' ? (
+              <>
+                <div className="field">
+                  <label>Name on card</label>
+                  <input
+                    value={card.name}
+                    onChange={(e) => setCard({ ...card, name: e.target.value })}
+                    disabled={paying}
+                    autoComplete="cc-name"
+                  />
+                </div>
+                <div className="field">
+                  <label>Card number</label>
+                  <input
+                    value={card.number}
+                    onChange={(e) => setCard({ ...card, number: e.target.value })}
+                    placeholder="4111 1111 1111 1111"
+                    inputMode="numeric"
+                    disabled={paying}
+                    autoComplete="cc-number"
+                  />
+                </div>
+                <div className="pesa-card-row">
                   <div className="field">
-                    <label>Name on card</label>
+                    <label>Expiry (MM/YY)</label>
                     <input
-                      value={card.name}
-                      onChange={(e) => setCard({ ...card, name: e.target.value })}
-                      placeholder="Amina Namukasa"
+                      value={card.expiry}
+                      onChange={(e) => setCard({ ...card, expiry: e.target.value })}
+                      placeholder="12/28"
                       disabled={paying}
-                      autoComplete="cc-name"
+                      autoComplete="cc-exp"
                     />
                   </div>
                   <div className="field">
-                    <label>Card number</label>
+                    <label>CVV</label>
                     <input
-                      value={card.number}
-                      onChange={(e) => setCard({ ...card, number: e.target.value })}
-                      placeholder="4111 1111 1111 1111"
+                      value={card.cvv}
+                      onChange={(e) => setCard({ ...card, cvv: e.target.value })}
+                      placeholder="123"
                       inputMode="numeric"
                       disabled={paying}
-                      autoComplete="cc-number"
+                      autoComplete="cc-csc"
                     />
                   </div>
-                  <div className="pesa-card-row">
-                    <div className="field">
-                      <label>Expiry (MM/YY)</label>
-                      <input
-                        value={card.expiry}
-                        onChange={(e) => setCard({ ...card, expiry: e.target.value })}
-                        placeholder="12/28"
-                        disabled={paying}
-                        autoComplete="cc-exp"
-                      />
-                    </div>
-                    <div className="field">
-                      <label>CVV</label>
-                      <input
-                        value={card.cvv}
-                        onChange={(e) => setCard({ ...card, cvv: e.target.value })}
-                        placeholder="123"
-                        inputMode="numeric"
-                        disabled={paying}
-                        autoComplete="cc-csc"
-                      />
-                    </div>
-                  </div>
-                  <p className="muted" style={{ marginTop: 0, fontSize: 12 }}>
-                    Demo card: 4111 1111 1111 1111 · any future expiry · any CVV
-                  </p>
-                </>
-              ) : (
-                <div className="alert alert-ok" style={{ marginBottom: 12 }}>
-                  {fulfillment === 'pickup'
-                    ? 'Have exact cash ready when you collect at the boutique. Your order is confirmed now.'
-                    : 'Have exact cash ready for the delivery agent. Your order is confirmed now; payment is collected on arrival.'}
                 </div>
-              )}
+              </>
+            ) : (
+              <div className="alert alert-ok" style={{ marginBottom: 12 }}>
+                {fulfillment === 'pickup'
+                  ? 'Have exact cash ready when you collect at the boutique. Your order is confirmed now.'
+                  : 'Have exact cash ready for the delivery agent. Pay only when the order arrives.'}
+              </div>
+            )}
 
-              <button
-                type="submit"
-                className="btn btn-gold"
-                style={{ width: '100%' }}
-                disabled={paying}
-              >
-                {paying
-                  ? payMethod === 'cash'
-                    ? 'Confirming order…'
-                    : payMethod === 'card'
-                      ? 'Processing card with Pesapal…'
-                      : 'Waiting for Pesapal MoMo approval…'
-                  : payMethod === 'cash'
-                    ? fulfillment === 'pickup'
-                      ? `Place order · Pay ${formatMoney(total)} at shop`
-                      : `Place order · Pay ${formatMoney(total)} on delivery`
-                    : `Pay ${formatMoney(total)} with Pesapal`}
-              </button>
-              {currency.code !== 'UGX' ? (
-                <p className="muted" style={{ marginTop: 10, fontSize: 12 }}>
-                  Displayed as {currency.flag} {currency.code} ({currency.country}). Settlement and
-                  Pesapal charge: {formatUgx(total)}.
-                </p>
-              ) : null}
-            </form>
-          )}
+            <button
+              type="submit"
+              className="btn btn-gold"
+              style={{ width: '100%' }}
+              disabled={paying}
+            >
+              {paying
+                ? payMethod === 'cash'
+                  ? 'Confirming order…'
+                  : payMethod === 'card'
+                    ? 'Processing card…'
+                    : 'Waiting for MoMo approval…'
+                : payMethod === 'cash'
+                  ? fulfillment === 'pickup'
+                    ? `Place order · Pay ${formatMoney(total)} at shop`
+                    : `Place order · Pay ${formatMoney(total)} on delivery`
+                  : `Pay ${formatMoney(total)}`}
+            </button>
+            {currency.code !== 'UGX' ? (
+              <p className="muted" style={{ marginTop: 10, fontSize: 12 }}>
+                Displayed as {currency.flag} {currency.code}. Settlement: {formatUgx(total)}.
+              </p>
+            ) : null}
+          </form>
         </div>
 
         <aside className="panel">
@@ -563,14 +498,10 @@ export function CheckoutPage() {
           <div className="price" style={{ marginTop: 6 }}>
             {formatMoney(total)}
           </div>
-          {currency.code !== 'UGX' ? (
-            <p className="muted" style={{ marginTop: 8, fontSize: 12 }}>
-              ≈ {formatUgx(total)} · rates for {currency.country}
-            </p>
-          ) : null}
           <p className="muted" style={{ marginTop: 14, fontSize: 12 }}>
-            Pay online with Pesapal (MTN MoMo, Airtel Money, or card), or pay in cash on delivery /
-            at the shop.
+            Cash on delivery, pay at shop, MTN MoMo, Airtel Money, or card. Outside Uganda?{' '}
+            {SHOP.deliveryNote}{' '}
+            <Link to="/returns">Returns</Link> · <Link to="/size-guide">Size guide</Link>
           </p>
         </aside>
       </div>

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { getCustomerToken, marketApi } from '../../services/api';
 import { useMarket } from '../../store/MarketStore';
 import {
@@ -39,7 +40,10 @@ export function ReferralPage() {
           path="/refer"
         />
         <h1 style={{ fontFamily: 'var(--display)' }}>Referral links</h1>
-        <p className="muted">Sign in at checkout to get your personal Elliecollections referral code.</p>
+        <p className="muted">Sign in to get your personal Elliecollections referral code.</p>
+        <Link to="/signin?next=/refer" className="btn btn-primary" style={{ marginTop: 8 }}>
+          Sign in
+        </Link>
       </div>
     );
   }

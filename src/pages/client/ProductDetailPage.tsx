@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { Heart, Share2 } from 'lucide-react';
+import { Heart, MessageCircle, Share2, ShoppingBag } from 'lucide-react';
 import { AmzPrice } from '../../components/AmzPrice';
 import { ImageGallery } from '../../components/ImageGallery';
 import { ProductCard, Stars } from '../../components/ProductCard';
 import { ProductReviews } from '../../components/ProductReviews';
 import { useMarket } from '../../store/MarketStore';
+import { useCurrency } from '../../store/CurrencyStore';
 import { DELIVERY_PERIOD_LABELS, PRODUCT_KIND_LABELS, SALE_MODE_LABELS } from '../../types';
 import { effectiveMinOrderQty, getPriceDisplay, unitPriceForQty } from '../../utils/pricing';
 import { isInWishlist, toggleWishlist } from '../../utils/wishlist';
@@ -18,11 +19,18 @@ import { getCustomerToken, marketApi } from '../../services/api';
 import { swalSuccess } from '../../utils/swal';
 import { Seo, productJsonLd } from '../../components/Seo';
 import { getPrimaryImage } from '../../utils/productImages';
+import {
+  productWhatsAppMessage,
+  sizeHelpWhatsAppMessage,
+  SHOP,
+  whatsappHref,
+} from '../../utils/shopContact';
 
 export function ProductDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { products, addToCart, customer } = useMarket();
+  const { formatMoney } = useCurrency();
   const product = products.find((p) => p.id === id && p.active);
   const [qty, setQty] = useState(1);
   const [selectedSize, setSelectedSize] = useState<string>('');
@@ -257,8 +265,51 @@ export function ProductDetailPage() {
                   Please choose a size
                 </p>
               ) : null}
+              <p className="ec-fit-help">
+                <Link to="/size-guide">Size guide</Link>
+                {' · '}
+                {(() => {
+                  const sizeWa = whatsappHref(
+                    sizeHelpWhatsAppMessage({
+                      title: product.title,
+                      productUrl: typeof window !== 'undefined' ? window.location.href : '',
+                    }),
+                  );
+                  return sizeWa ? (
+                    <a href={sizeWa} target="_blank" rel="noreferrer">
+                      Ask fit on WhatsApp
+                    </a>
+                  ) : (
+                    <span>Ask fit on WhatsApp</span>
+                  );
+                })()}
+                {' · '}
+                <Link to="/returns">{SHOP.returnsWindowDays}-day exchange</Link>
+              </p>
             </div>
-          ) : null}
+          ) : (
+            <p className="ec-fit-help">
+              <Link to="/size-guide">Size guide</Link>
+              {' · '}
+              <Link to="/returns">{SHOP.returnsWindowDays}-day exchange</Link>
+              {' · '}
+              {(() => {
+                const sizeWa = whatsappHref(
+                  sizeHelpWhatsAppMessage({
+                    title: product.title,
+                    productUrl: typeof window !== 'undefined' ? window.location.href : '',
+                  }),
+                );
+                return sizeWa ? (
+                  <a href={sizeWa} target="_blank" rel="noreferrer">
+                    Ask on WhatsApp before you buy
+                  </a>
+                ) : (
+                  'Ask on WhatsApp before you buy'
+                );
+              })()}
+            </p>
+          )}
 
           <div className="ec-specs">
             <h3>Product details</h3>
@@ -423,39 +474,61 @@ export function ProductDetailPage() {
             </div>
           ) : null}
 
-          <button
-            type="button"
-            className="amz-btn-cart"
-            disabled={product.stock <= 0 || !canBuy}
-            onClick={() => addWithSize()}
-          >
-            {canBuy ? 'Add to bag' : `Need ${minQty}+ in stock`}
-          </button>
-          <button
-            type="button"
-            className="amz-btn-buy"
-            disabled={product.stock <= 0 || !canBuy || !sizeReady}
-            onClick={() => {
-              if (!addWithSize()) return;
-              navigate('/checkout');
-            }}
-          >
-            Buy now
-          </button>
-          <div style={{ display: 'flex', gap: 8 }}>
+          <div className="amz-buybox-cta">
+            <button
+              type="button"
+              className={`btn btn-bag${product.stock <= 0 || !canBuy ? ' is-sold' : ''}`}
+              disabled={product.stock <= 0 || !canBuy}
+              onClick={() => addWithSize()}
+            >
+              {canBuy ? <ShoppingBag size={16} strokeWidth={1.75} /> : null}
+              {canBuy ? 'Add to bag' : `Need ${minQty}+ in stock`}
+            </button>
+            <button
+              type="button"
+              className="btn btn-buy"
+              disabled={product.stock <= 0 || !canBuy || !sizeReady}
+              onClick={() => {
+                if (!addWithSize()) return;
+                navigate('/checkout');
+              }}
+            >
+              Buy now
+            </button>
+            {(() => {
+              const wa = whatsappHref(
+                productWhatsAppMessage({
+                  title: product.title,
+                  productUrl: typeof window !== 'undefined' ? window.location.href : '',
+                  size: selectedSize || undefined,
+                  priceLabel: formatMoney(unitNow),
+                }),
+              );
+              return wa ? (
+                <a
+                  href={wa}
+                  className="btn btn-secondary ec-wa-btn"
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  <MessageCircle size={16} strokeWidth={1.75} />
+                  Order on WhatsApp
+                </a>
+              ) : null;
+            })()}
+          </div>
+          <div className="amz-buybox-tools">
             <button
               type="button"
               className="btn btn-secondary"
-              style={{ flex: 1 }}
               onClick={() => setLoved(toggleWishlist(product.id).includes(product.id))}
             >
-              <Heart size={14} fill={loved ? 'currentColor' : 'none'} />{' '}
+              <Heart size={14} fill={loved ? 'currentColor' : 'none'} />
               {loved ? 'Saved' : 'Wishlist'}
             </button>
             <button
               type="button"
               className="btn btn-secondary"
-              style={{ flex: 1 }}
               disabled={shareBusy}
               onClick={() => void onShare()}
             >

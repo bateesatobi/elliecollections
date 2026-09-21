@@ -90,12 +90,14 @@ export function organizationJsonLd() {
     description: DEFAULT_DESCRIPTION,
     image: DEFAULT_IMAGE,
     priceRange: '$$',
+    telephone: '+256746157039',
     address: {
       '@type': 'PostalAddress',
       streetAddress: 'Plot 12, Acacia Avenue, Kololo',
       addressLocality: 'Kampala',
       addressCountry: 'UG',
     },
+    areaServed: ['UG', 'KE', 'TZ', 'RW'],
   };
 }
 

@@ -42,12 +42,13 @@ type MarketContextValue = {
   setCartQty: (productId: string, qty: number, size?: string) => void;
   removeFromCart: (productId: string, size?: string) => void;
   clearCart: () => void;
-  loginCustomer: (emailOrPhone: string, password: string) => Promise<string | null>;
+  loginCustomer: (emailOrPhone: string, password?: string) => Promise<string | null>;
+  continueWithPhone: (phone: string, name?: string) => Promise<string | null>;
   registerCustomer: (data: {
     name: string;
-    email: string;
+    email?: string;
     phone: string;
-    password: string;
+    password?: string;
   }) => Promise<string | null>;
   logoutCustomer: () => void;
   loginAdmin: (
@@ -66,6 +67,9 @@ type MarketContextValue = {
     fulfillmentMode?: 'delivery' | 'pickup';
     recipientName?: string;
     recipientPhone?: string;
+    customerName?: string;
+    customerPhone?: string;
+    customerEmail?: string;
   }) => Promise<{ ok: true; order: Order } | { ok: false; error: string }>;
   upsertProduct: (
     product: Omit<Product, 'createdAt' | 'updatedAt'> & { createdAt?: string },
@@ -247,7 +251,7 @@ export function MarketProvider({ children }: { children: ReactNode }) {
 
   const clearCart = useCallback(() => setCart([]), []);
 
-  const loginCustomer = useCallback(async (emailOrPhone: string, password: string) => {
+  const loginCustomer = useCallback(async (emailOrPhone: string, password?: string) => {
     try {
       const token = await marketApi.login(emailOrPhone, password);
       const me = await marketApi.me(token);
@@ -261,26 +265,35 @@ export function MarketProvider({ children }: { children: ReactNode }) {
     }
   }, [refreshCustomerOrders]);
 
-  const registerCustomer = useCallback(
-    async (data: { name: string; email: string; phone: string; password: string }) => {
-      if (!data.name.trim() || !data.email.trim() || !data.phone.trim() || data.password.length < 6) {
-        return 'Fill all fields. Password must be at least 6 characters.';
-      }
+  const continueWithPhone = useCallback(
+    async (phone: string, name?: string) => {
+      if (!phone.trim()) return 'Enter your mobile number.';
       try {
         const { getStoredReferral, clearStoredReferral } = await import('../utils/referral');
         const referredBy = getStoredReferral() || undefined;
-        const token = await marketApi.register({ ...data, referredBy });
+        const token = await marketApi.phoneAuth(phone, name, referredBy);
         const me = await marketApi.me(token);
+        if (me.role === 'admin') return 'Use the admin login for admin accounts.';
         setCustomerToken(token);
         setCustomer(me);
-        setOrders([]);
+        await refreshCustomerOrders(token);
         if (referredBy) clearStoredReferral();
         return null;
       } catch (e) {
-        return e instanceof Error ? e.message : 'Registration failed.';
+        return e instanceof Error ? e.message : 'Could not continue with this number.';
       }
     },
-    [],
+    [refreshCustomerOrders],
+  );
+
+  const registerCustomer = useCallback(
+    async (data: { name: string; email?: string; phone: string; password?: string }) => {
+      if (!data.name.trim() || !data.phone.trim()) {
+        return 'Enter your name and mobile number.';
+      }
+      return continueWithPhone(data.phone, data.name);
+    },
+    [continueWithPhone],
   );
 
   const logoutCustomer = useCallback(() => {
@@ -332,9 +345,11 @@ export function MarketProvider({ children }: { children: ReactNode }) {
       fulfillmentMode?: 'delivery' | 'pickup';
       recipientName?: string;
       recipientPhone?: string;
+      customerName?: string;
+      customerPhone?: string;
+      customerEmail?: string;
     }) => {
       const token = getCustomerToken();
-      if (!customer || !token) return { ok: false as const, error: 'Login required to checkout.' };
       if (!cart.length) return { ok: false as const, error: 'Your cart is empty.' };
       if (!payload.deliveryAddress.trim() || !payload.district.trim()) {
         return {
@@ -345,12 +360,23 @@ export function MarketProvider({ children }: { children: ReactNode }) {
               : 'Enter recipient address and location.',
         };
       }
-      if (!payload.recipientName?.trim() || !payload.recipientPhone?.trim()) {
-        return { ok: false as const, error: 'Enter recipient name and phone.' };
+      const recipientName = (payload.recipientName || payload.customerName || customer?.name || '').trim();
+      const recipientPhone = (
+        payload.recipientPhone ||
+        payload.customerPhone ||
+        customer?.phone ||
+        ''
+      ).trim();
+      if (!recipientName || !recipientPhone) {
+        return { ok: false as const, error: 'Enter your name and phone number.' };
       }
       if (!payload.paymentRef.trim()) {
         return { ok: false as const, error: 'Payment was not completed.' };
       }
+
+      const customerName = (payload.customerName || customer?.name || recipientName).trim();
+      const customerPhone = (payload.customerPhone || customer?.phone || recipientPhone).trim();
+      const customerEmail = (payload.customerEmail || customer?.email || '').trim();
 
       try {
         const items = cart.map((l) => ({
@@ -371,16 +397,16 @@ export function MarketProvider({ children }: { children: ReactNode }) {
           quote_id: quote.quote_id,
           payment_tracking_id: payload.paymentTrackingId,
           merchant_reference: payload.merchantReference,
-          customer_name: customer.name,
-          customer_email: customer.email,
-          customer_phone: customer.phone,
-          recipient_name: payload.recipientName.trim(),
-          recipient_phone: payload.recipientPhone.trim(),
+          customer_name: customerName,
+          customer_email: customerEmail || undefined,
+          customer_phone: customerPhone,
+          recipient_name: recipientName,
+          recipient_phone: recipientPhone,
           fulfillment_mode: fulfillmentMode,
         });
         setCart([]);
         await refreshCatalog();
-        await refreshCustomerOrders(token);
+        if (token) await refreshCustomerOrders(token);
         return { ok: true as const, order };
       } catch (e) {
         return {
@@ -513,6 +539,7 @@ export function MarketProvider({ children }: { children: ReactNode }) {
     removeFromCart,
     clearCart,
     loginCustomer,
+    continueWithPhone,
     registerCustomer,
     logoutCustomer,
     loginAdmin,

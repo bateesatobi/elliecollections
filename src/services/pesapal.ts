@@ -1,3 +1,5 @@
+import { normalizeE164, validateMobilePhone } from '../utils/phone';
+
 export type PesapalMethod = 'mtn' | 'airtel' | 'card' | 'cash';
 
 export type PesapalChargeInput = {
@@ -59,21 +61,11 @@ export function pesapalMethodLabel(method: PesapalMethod): string {
 }
 
 export function normalizeUgPhone(phone: string): string {
-  const digits = phone.replace(/\D/g, '');
-  if (digits.startsWith('256') && digits.length === 12) return `0${digits.slice(3)}`;
-  return digits;
+  return normalizeE164(phone, 'UG');
 }
 
 export function validateUgMobile(phone: string): string | null {
-  const digits = normalizeUgPhone(phone);
-  if (!digits) return 'Enter the mobile money number.';
-  if (digits.length !== 10 || !digits.startsWith('0')) {
-    return 'Use a Uganda mobile number like 0772 123 456.';
-  }
-  const prefix = digits.slice(0, 3);
-  const valid = ['070', '071', '072', '073', '074', '075', '076', '077', '078', '079'];
-  if (!valid.includes(prefix)) return 'Invalid Uganda mobile prefix.';
-  return null;
+  return validateMobilePhone(phone, 'UG');
 }
 
 function luhnOk(num: string): boolean {
@@ -154,52 +146,33 @@ export async function chargeViaPesapal(
   try {
     const { getCustomerToken, marketApi } = await import('./api');
     const token = getCustomerToken();
-    if (token) {
-      const charged = await marketApi.charge(token, {
-        amount_ugx: Math.round(input.amountUgx),
-        method: input.method,
-        phone: input.phone,
-        card:
-          input.method === 'card'
-            ? {
-                name: input.cardName || '',
-                number: input.cardNumber || '',
-                expiry: input.cardExpiry || '',
-                cvv: input.cardCvv || '',
-              }
-            : undefined,
-      });
-      return {
-        ok: true,
-        trackingId: charged.tracking_id,
-        merchantReference: charged.merchant_reference,
-        paymentRef: charged.payment_ref,
-        method: input.method,
-        methodLabel: pesapalMethodLabel(input.method),
-        payOnDelivery: false,
-      };
-    }
+    const charged = await marketApi.charge(token, {
+      amount_ugx: Math.round(input.amountUgx),
+      method: input.method,
+      phone: input.phone,
+      card:
+        input.method === 'card'
+          ? {
+              name: input.cardName || '',
+              number: input.cardNumber || '',
+              expiry: input.cardExpiry || '',
+              cvv: input.cardCvv || '',
+            }
+          : undefined,
+    });
+    return {
+      ok: true,
+      trackingId: charged.tracking_id,
+      merchantReference: charged.merchant_reference,
+      paymentRef: charged.payment_ref,
+      method: input.method,
+      methodLabel: pesapalMethodLabel(input.method),
+      payOnDelivery: false,
+    };
   } catch (e) {
     return {
       ok: false,
       error: e instanceof Error ? e.message : 'Payment charge failed.',
     };
   }
-
-  // Offline fallback (no token)
-  await new Promise((r) => setTimeout(r, 800));
-  const merchantReference = `AGS-${Date.now().toString(36).toUpperCase()}`;
-  const trackingId = `PES-${Math.random().toString(36).slice(2, 10).toUpperCase()}`;
-  const code = input.method.toUpperCase();
-  const paymentRef = `PESA-${code}-${Math.floor(100000 + Math.random() * 899999)}`;
-
-  return {
-    ok: true,
-    trackingId,
-    merchantReference,
-    paymentRef,
-    method: input.method,
-    methodLabel: pesapalMethodLabel(input.method),
-    payOnDelivery: false,
-  };
 }

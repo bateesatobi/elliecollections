@@ -1,4 +1,5 @@
 import { useEffect, useState, type FormEvent } from 'react';
+import { Link } from 'react-router-dom';
 import { Stars } from './ProductCard';
 import { getCustomerToken, marketApi } from '../services/api';
 import { useMarket } from '../store/MarketStore';
@@ -51,7 +52,7 @@ export function ProductReviews({ productId }: Props) {
     e.preventDefault();
     const token = getCustomerToken();
     if (!customer || !token) {
-      setError('Sign in at checkout to leave a review.');
+      setError('Sign in to leave a review.');
       return;
     }
     setBusy(true);
@@ -126,9 +127,14 @@ export function ProductReviews({ productId }: Props) {
         <aside className="panel ec-review-form-wrap">
           <h3 style={{ marginTop: 0 }}>Write a review</h3>
           {!customer ? (
-            <p className="muted">
-              Sign in when you checkout, then return here to rate this piece.
-            </p>
+            <div>
+              <p className="muted" style={{ marginTop: 0 }}>
+                Sign in to rate this piece.
+              </p>
+              <Link to="/signin" className="btn btn-secondary">
+                Sign in
+              </Link>
+            </div>
           ) : formLocked ? (
             <div className="alert alert-ok" style={{ marginBottom: 0 }}>
               {pendingMine

@@ -24,6 +24,9 @@ import { AdminUnitsPage } from './pages/admin/AdminUnitsPage';
 import { AdminPromosPage } from './pages/admin/AdminPromosPage';
 import { AdminReviewsPage } from './pages/admin/AdminReviewsPage';
 import { TrackOrderPage } from './pages/client/TrackOrderPage';
+import { SignInPage } from './pages/client/SignInPage';
+import { SizeGuidePage } from './pages/client/SizeGuidePage';
+import { ReturnsPage } from './pages/client/ReturnsPage';
 
 export default function App() {
   return (
@@ -37,11 +40,14 @@ export default function App() {
               <Route path="product/:id" element={<ProductDetailPage />} />
               <Route path="cart" element={<CartPage />} />
               <Route path="checkout" element={<CheckoutPage />} />
+              <Route path="signin" element={<SignInPage />} />
               <Route path="orders" element={<OrdersPage />} />
               <Route path="orders/:id" element={<OrderDetailPage />} />
               <Route path="track" element={<TrackOrderPage />} />
               <Route path="wishlist" element={<WishlistPage />} />
               <Route path="refer" element={<ReferralPage />} />
+              <Route path="size-guide" element={<SizeGuidePage />} />
+              <Route path="returns" element={<ReturnsPage />} />
             </Route>
 
             <Route path="/admin/login" element={<AdminLoginPage />} />

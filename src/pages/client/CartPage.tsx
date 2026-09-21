@@ -1,8 +1,10 @@
 import { Link } from 'react-router-dom';
+import { MessageCircle } from 'lucide-react';
 import { useMarket } from '../../store/MarketStore';
 import { useCurrency } from '../../store/CurrencyStore';
 import { getPrimaryImage } from '../../utils/productImages';
 import { Seo } from '../../components/Seo';
+import { cartWhatsAppMessage, whatsappHref } from '../../utils/shopContact';
 
 export function CartPage() {
   const { cart, products, setCartQty, removeFromCart, cartTotal } = useMarket();
@@ -18,6 +20,15 @@ export function CartPage() {
   }>;
 
   const delivery = cartTotal >= 200000 ? 0 : lines.length ? 15000 : 0;
+  const wa = whatsappHref(
+    cartWhatsAppMessage(
+      lines.map(
+        ({ line, product }) =>
+          `• ${product.title}${line.size ? ` (${line.size})` : ''} ×${line.quantity}`,
+      ),
+      formatMoney(cartTotal + delivery),
+    ),
+  );
 
   if (!lines.length) {
     return (
@@ -26,7 +37,8 @@ export function CartPage() {
         <div className="amz-cart-list">
           <h1>Your bag is empty</h1>
           <p style={{ color: 'var(--muted)' }}>
-            Browse the collection, add pieces you love, then sign in only when you checkout.
+            Browse the collection, add pieces you love, then checkout with just your name and
+            phone — no account required.
           </p>
           <Link to="/shop" className="btn btn-primary" style={{ marginTop: 8 }}>
             Continue shopping
@@ -123,11 +135,23 @@ export function CartPage() {
             Shown in {currency.code} ({currency.country}). Payment settles in UGX.
           </p>
         ) : null}
-        <Link to="/checkout" className="amz-btn-buy">
+        <Link to="/checkout" className="btn btn-bag">
           Proceed to checkout
         </Link>
+        {wa ? (
+          <a
+            href={wa}
+            className="btn btn-secondary ec-wa-btn"
+            style={{ width: '100%', marginTop: 8 }}
+            target="_blank"
+            rel="noreferrer"
+          >
+            <MessageCircle size={16} />
+            Order on WhatsApp
+          </a>
+        ) : null}
         <p style={{ fontSize: 12, color: '#565959', marginTop: 10 }}>
-          Account required only when you pay.
+          No account needed — pay on delivery, at the shop, or with MTN / Airtel.
         </p>
       </aside>
     </div>

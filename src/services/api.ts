@@ -410,11 +410,11 @@ export const marketApi = {
     return data.items.map(mapProduct);
   },
 
-  async login(emailOrPhone: string, password: string) {
+  async login(emailOrPhone: string, password?: string) {
     const key = emailOrPhone.trim();
     const body = key.includes('@')
-      ? { email: key.toLowerCase(), password }
-      : { phone_number: key, password };
+      ? { email: key.toLowerCase(), password: password || undefined }
+      : { phone_number: key, password: password || undefined };
     const tok = await request<{ access_token: string }>('/login', {
       method: 'POST',
       body: JSON.stringify(body),
@@ -422,11 +422,24 @@ export const marketApi = {
     return tok.access_token;
   },
 
+  /** Passwordless continue with mobile number (creates account if name provided). */
+  async phoneAuth(phone: string, name?: string, referredBy?: string) {
+    const tok = await request<{ access_token: string }>('/auth/phone', {
+      method: 'POST',
+      body: JSON.stringify({
+        phone_number: phone.trim(),
+        name: name?.trim() || undefined,
+        referred_by: referredBy || undefined,
+      }),
+    });
+    return tok.access_token;
+  },
+
   async register(data: {
     name: string;
-    email: string;
+    email?: string;
     phone: string;
-    password: string;
+    password?: string;
     referredBy?: string;
   }) {
     await request('/register', {
@@ -434,15 +447,15 @@ export const marketApi = {
       body: JSON.stringify({
         name: data.name,
         phone_number: data.phone,
-        password: data.password,
+        password: data.password || undefined,
         area: 'Uganda',
-        email: data.email,
+        email: data.email || undefined,
         role: 'customer',
         profile_complete: false,
         referred_by: data.referredBy || undefined,
       }),
     });
-    return this.login(data.phone, data.password);
+    return this.phoneAuth(data.phone);
   },
 
   async me(token: string) {
@@ -484,7 +497,7 @@ export const marketApi = {
   },
 
   async quote(
-    token: string,
+    token: string | null | undefined,
     items: Array<{ product_id: string; quantity: number; size?: string }>,
     opts?: { fulfillment_mode?: 'delivery' | 'pickup' },
   ) {
@@ -495,7 +508,7 @@ export const marketApi = {
       delivery_ugx: number;
     }>('/market/checkout/quote', {
       method: 'POST',
-      token,
+      token: token || undefined,
       body: JSON.stringify({
         items,
         fulfillment_mode: opts?.fulfillment_mode || 'delivery',
@@ -504,7 +517,7 @@ export const marketApi = {
   },
 
   async charge(
-    token: string,
+    token: string | null | undefined,
     payload: {
       amount_ugx: number;
       method: 'mtn' | 'airtel' | 'card';
@@ -521,13 +534,13 @@ export const marketApi = {
       method: string;
     }>('/market/payments/charge', {
       method: 'POST',
-      token,
+      token: token || undefined,
       body: JSON.stringify(payload),
     });
   },
 
   async createOrder(
-    token: string,
+    token: string | null | undefined,
     payload: {
       items: Array<{ product_id: string; quantity: number; size?: string }>;
       delivery_address: string;
@@ -547,7 +560,7 @@ export const marketApi = {
   ) {
     const order = await request<ApiOrder>('/market/orders', {
       method: 'POST',
-      token,
+      token: token || undefined,
       body: JSON.stringify(payload),
     });
     return mapOrder(order);
@@ -751,12 +764,29 @@ export const marketApi = {
     return mapOrder(order);
   },
 
-  async lookupOrder(orderId: string, phone: string) {
-    const order = await request<ApiOrder>('/market/orders/lookup', {
+  async lookupOrdersByPhone(phone: string, orderId?: string) {
+    const data = await request<{ items: ApiOrder[]; total: number }>('/market/orders/lookup', {
       method: 'POST',
-      body: JSON.stringify({ order_id: orderId.trim(), phone: phone.trim() }),
+      body: JSON.stringify({
+        phone: phone.trim(),
+        ...(orderId?.trim() ? { order_id: orderId.trim() } : {}),
+      }),
     });
-    return mapOrder(order);
+    return (data.items || []).map(mapOrder);
+  },
+
+  /** @deprecated Prefer lookupOrdersByPhone — kept for single-order deep links */
+  async lookupOrder(orderId: string, phone: string) {
+    const data = await request<{ items: ApiOrder[]; total: number }>('/market/orders/lookup', {
+      method: 'POST',
+      body: JSON.stringify({
+        phone: phone.trim(),
+        order_id: orderId.trim(),
+      }),
+    });
+    const order = (data.items || []).map(mapOrder)[0];
+    if (!order) throw new Error('Order not found');
+    return order;
   },
 
   async listReviews(productId: string) {

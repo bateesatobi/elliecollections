@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Heart, Share2, Star } from 'lucide-react';
+import { Heart, Share2, ShoppingBag, Star } from 'lucide-react';
 import { AmzPrice, DealBadge } from './AmzPrice';
 import { useMarket } from '../store/MarketStore';
 import { getPrimaryImage } from '../utils/productImages';
@@ -134,8 +134,7 @@ export function ProductCard({ product }: { product: Product }) {
         <div className="ec-card-actions">
           <button
             type="button"
-            className="btn btn-primary"
-            style={{ flex: 1 }}
+            className={`btn btn-bag${product.stock <= 0 ? ' is-sold' : ''}`}
             disabled={product.stock <= 0}
             onClick={() => {
               if (needsSizePick || isWholesale || minQty > 1) {
@@ -148,6 +147,7 @@ export function ProductCard({ product }: { product: Product }) {
               addToCart(product.id, 1, one);
             }}
           >
+            {product.stock > 0 ? <ShoppingBag size={15} strokeWidth={1.75} /> : null}
             {product.stock > 0
               ? needsSizePick || isWholesale || minQty > 1
                 ? 'View details'

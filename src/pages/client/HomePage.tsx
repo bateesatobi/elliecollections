@@ -4,7 +4,9 @@ import { useMarket } from '../../store/MarketStore';
 import { useCurrency } from '../../store/CurrencyStore';
 import { ProductCard } from '../../components/ProductCard';
 import { PromoBanner } from '../../components/PromoBanner';
+import { TrustStrip } from '../../components/TrustStrip';
 import { Seo, organizationJsonLd } from '../../components/Seo';
+import { SHOP } from '../../utils/shopContact';
 import './home.css';
 
 const HERO_IMAGE =
@@ -42,6 +44,10 @@ export function HomePage() {
 
       <PromoBanner />
 
+      <div className="container" style={{ paddingTop: '1.75rem' }}>
+        <TrustStrip />
+      </div>
+
       <section className="ec-home-section container">
         <div className="ec-section-head">
           <div>
@@ -64,7 +70,10 @@ export function HomePage() {
       <section className="ec-band">
         <div className="container ec-band-inner">
           <h2>From wardrobe staples to finishing touches</h2>
-          <p>Apparel and accessories, delivered across Uganda. Pay securely at checkout.</p>
+          <p>
+            Apparel and accessories for Uganda and East Africa — deliver to your door or collect in
+            Kololo. Pay on delivery, MTN / Airtel Money, or cash at the shop. No password needed.
+          </p>
           <div className="ec-band-actions">
             <Link to="/shop?kind=apparel" className="btn btn-primary">
               Shop apparel
@@ -72,9 +81,12 @@ export function HomePage() {
             <Link to="/shop?kind=accessories" className="btn btn-secondary">
               Shop accessories
             </Link>
+            <Link to="/size-guide" className="btn btn-secondary">
+              Size guide
+            </Link>
           </div>
           <p className="ec-band-note muted">
-            Free delivery on orders from {formatMoney(200_000)}
+            Free delivery on orders from {formatMoney(200_000)} · {SHOP.deliveryNote}
           </p>
         </div>
       </section>

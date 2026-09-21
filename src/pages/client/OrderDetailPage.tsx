@@ -15,11 +15,11 @@ export function OrderDetailPage() {
         <Seo title="Order not found" path={`/orders/${id || ''}`} noIndex />
         <div className="empty">Order not found.</div>
         <div style={{ display: 'flex', gap: 10, marginTop: 12, flexWrap: 'wrap' }}>
-          <Link to="/orders" className="btn btn-primary">
-            Back to orders
+          <Link to="/track" className="btn btn-primary">
+            Track your orders
           </Link>
-          <Link to="/track" className="btn btn-secondary">
-            Track with phone
+          <Link to="/orders" className="btn btn-secondary">
+            Order history
           </Link>
         </div>
       </div>
