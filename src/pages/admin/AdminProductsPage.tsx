@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Pencil, Search, Trash2 } from 'lucide-react';
+import { Eye, Pencil, Search, Trash2 } from 'lucide-react';
 import { AdminDrawer, AdminRowMenu } from '../../components/admin/AdminChrome';
 import { AdminPagination, useAdminPagination } from '../../components/admin/AdminPagination';
 import { marketApi } from '../../services/api';
@@ -921,7 +921,7 @@ export function AdminProductsPage() {
               <th>Price</th>
               <th>Stock</th>
               <th>Status</th>
-              <th style={{ width: 170 }}>Actions</th>
+              <th style={{ width: 56 }}>Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -975,37 +975,26 @@ export function AdminProductsPage() {
                       </span>
                     </td>
                     <td>
-                      <div className="admin-row-actions">
-                        <button
-                          type="button"
-                          className="btn btn-secondary admin-icon-btn"
-                          title="Update"
-                          onClick={() => openEdit(p)}
-                        >
-                          <Pencil size={14} />
-                          Edit
-                        </button>
-                        <button
-                          type="button"
-                          className="btn admin-icon-btn admin-icon-btn-danger"
-                          title="Delete"
-                          onClick={() => void removeProduct(p)}
-                        >
-                          <Trash2 size={14} />
-                          Delete
-                        </button>
-                        <AdminRowMenu
-                          items={[
-                            { label: 'View', onClick: () => void openView(p) },
-                            { label: 'Update', onClick: () => openEdit(p) },
-                            {
-                              label: 'Delete',
-                              tone: 'danger',
-                              onClick: () => void removeProduct(p),
-                            },
-                          ]}
-                        />
-                      </div>
+                      <AdminRowMenu
+                        items={[
+                          {
+                            label: 'View',
+                            icon: <Eye size={16} />,
+                            onClick: () => void openView(p),
+                          },
+                          {
+                            label: 'Update',
+                            icon: <Pencil size={16} />,
+                            onClick: () => openEdit(p),
+                          },
+                          {
+                            label: 'Delete',
+                            icon: <Trash2 size={16} />,
+                            tone: 'danger',
+                            onClick: () => void removeProduct(p),
+                          },
+                        ]}
+                      />
                     </td>
                   </tr>
                 );
