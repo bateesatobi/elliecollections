@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import { Pencil, Search, Trash2 } from 'lucide-react';
 import { AdminDrawer, AdminRowMenu } from '../../components/admin/AdminChrome';
 import { AdminPagination, useAdminPagination } from '../../components/admin/AdminPagination';
 import { marketApi } from '../../services/api';
@@ -141,6 +142,7 @@ export function AdminProductsPage() {
   const [viewLoading, setViewLoading] = useState(false);
   const [viewError, setViewError] = useState<string | null>(null);
   const [filter, setFilter] = useState<'all' | ProductKind>('all');
+  const [search, setSearch] = useState('');
   const [categories, setCategories] = useState<MarketCategory[]>([]);
   const [units, setUnits] = useState<MarketUnit[]>([]);
 
@@ -169,10 +171,24 @@ export function AdminProductsPage() {
     })();
   }, []);
 
-  const list = useMemo(
-    () => products.filter((p) => (filter === 'all' ? true : p.kind === filter)),
-    [products, filter],
-  );
+  const list = useMemo(() => {
+    const needle = search.trim().toLowerCase();
+    return products
+      .filter((p) => (filter === 'all' ? true : p.kind === filter))
+      .filter((p) => {
+        if (!needle) return true;
+        return (
+          p.title.toLowerCase().includes(needle) ||
+          p.category.toLowerCase().includes(needle) ||
+          p.location.toLowerCase().includes(needle) ||
+          (p.brand || '').toLowerCase().includes(needle) ||
+          (p.color || '').toLowerCase().includes(needle) ||
+          (p.seller || '').toLowerCase().includes(needle) ||
+          (p.description || '').toLowerCase().includes(needle) ||
+          p.id.toLowerCase().includes(needle)
+        );
+      });
+  }, [products, filter, search]);
   const {
     pageItems,
     page,
@@ -181,7 +197,18 @@ export function AdminProductsPage() {
     total,
     from,
     to,
-  } = useAdminPagination(list, 10, filter);
+  } = useAdminPagination(list, 10, `${filter}|${search}`);
+
+  const removeProduct = async (p: Product) => {
+    const ok = await swalConfirm('Delete product?', `Remove “${p.title}” from the catalogue.`);
+    if (!ok) return;
+    const err = await deleteProduct(p.id);
+    if (err) {
+      await swalError('Delete failed', err);
+      return;
+    }
+    await swalSuccess('Product deleted', `${p.title} was removed.`);
+  };
 
   const formKind: ProductKind = editing?.kind ?? (filter === 'accessories' ? 'accessories' : 'apparel');
 
@@ -379,17 +406,33 @@ export function AdminProductsPage() {
         </button>
       </div>
 
-      <div className="chip-row" style={{ marginBottom: 12 }}>
-        {(['all', 'apparel', 'accessories'] as const).map((k) => (
-          <button
-            key={k}
-            type="button"
-            className={`chip ${filter === k ? 'active' : ''}`}
-            onClick={() => setFilter(k)}
-          >
-            {k === 'all' ? 'All' : k === 'apparel' ? 'Apparel' : 'Accessories'}
-          </button>
-        ))}
+      <div className="admin-toolbar">
+        <div className="chip-row" style={{ marginBottom: 0 }}>
+          {(['all', 'apparel', 'accessories'] as const).map((k) => (
+            <button
+              key={k}
+              type="button"
+              className={`chip ${filter === k ? 'active' : ''}`}
+              onClick={() => setFilter(k)}
+            >
+              {k === 'all' ? 'All' : k === 'apparel' ? 'Apparel' : 'Accessories'}
+            </button>
+          ))}
+        </div>
+        <label className="admin-search">
+          <Search size={16} aria-hidden />
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search title, brand, category, location…"
+            aria-label="Search products"
+          />
+          {search ? (
+            <button type="button" className="admin-search-clear" onClick={() => setSearch('')}>
+              Clear
+            </button>
+          ) : null}
+        </label>
       </div>
 
       <AdminDrawer
@@ -878,14 +921,18 @@ export function AdminProductsPage() {
               <th>Price</th>
               <th>Stock</th>
               <th>Status</th>
-              <th style={{ width: 56 }}>Actions</th>
+              <th style={{ width: 170 }}>Actions</th>
             </tr>
           </thead>
           <tbody>
             {list.length === 0 ? (
               <tr>
                 <td colSpan={6}>
-                  <div className="empty">No products in this filter.</div>
+                  <div className="empty">
+                    {search.trim()
+                      ? `No products match “${search.trim()}”.`
+                      : 'No products in this filter.'}
+                  </div>
                 </td>
               </tr>
             ) : (
@@ -928,29 +975,37 @@ export function AdminProductsPage() {
                       </span>
                     </td>
                     <td>
-                      <AdminRowMenu
-                        items={[
-                          { label: 'View', onClick: () => void openView(p) },
-                          { label: 'Update', onClick: () => openEdit(p) },
-                          {
-                            label: 'Delete',
-                            tone: 'danger',
-                            onClick: async () => {
-                              const ok = await swalConfirm(
-                                'Delete product?',
-                                `Remove “${p.title}” from the catalogue.`,
-                              );
-                              if (!ok) return;
-                              const err = await deleteProduct(p.id);
-                              if (err) {
-                                await swalError('Delete failed', err);
-                                return;
-                              }
-                              await swalSuccess('Product deleted', `${p.title} was removed.`);
+                      <div className="admin-row-actions">
+                        <button
+                          type="button"
+                          className="btn btn-secondary admin-icon-btn"
+                          title="Update"
+                          onClick={() => openEdit(p)}
+                        >
+                          <Pencil size={14} />
+                          Edit
+                        </button>
+                        <button
+                          type="button"
+                          className="btn admin-icon-btn admin-icon-btn-danger"
+                          title="Delete"
+                          onClick={() => void removeProduct(p)}
+                        >
+                          <Trash2 size={14} />
+                          Delete
+                        </button>
+                        <AdminRowMenu
+                          items={[
+                            { label: 'View', onClick: () => void openView(p) },
+                            { label: 'Update', onClick: () => openEdit(p) },
+                            {
+                              label: 'Delete',
+                              tone: 'danger',
+                              onClick: () => void removeProduct(p),
                             },
-                          },
-                        ]}
-                      />
+                          ]}
+                        />
+                      </div>
                     </td>
                   </tr>
                 );

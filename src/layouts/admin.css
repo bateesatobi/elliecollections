@@ -243,6 +243,77 @@
   font-size: 0.88rem;
 }
 
+.admin-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 12px;
+}
+
+.admin-search {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  min-width: min(100%, 280px);
+  flex: 1 1 240px;
+  max-width: 420px;
+  border: 1px solid var(--admin-line);
+  border-radius: 999px;
+  background: #fff;
+  padding: 0.35rem 0.75rem;
+  color: var(--admin-muted);
+}
+
+.admin-search input {
+  flex: 1;
+  border: none;
+  outline: none;
+  background: transparent;
+  min-width: 0;
+  font: inherit;
+  color: var(--admin-ink);
+  padding: 0.35rem 0;
+}
+
+.admin-search-clear {
+  border: none;
+  background: transparent;
+  color: var(--blush-deep);
+  font-size: 0.75rem;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 0.2rem 0.35rem;
+}
+
+.admin-row-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.admin-icon-btn {
+  min-height: 34px;
+  padding: 0.35rem 0.65rem;
+  font-size: 0.7rem;
+  gap: 0.3rem;
+  border-radius: 999px;
+}
+
+.admin-icon-btn-danger {
+  background: var(--danger-soft, #fce8eb);
+  color: var(--danger, #a33b4a);
+  border: 1px solid #f0c4cb;
+}
+
+.admin-icon-btn-danger:hover {
+  background: var(--danger, #a33b4a);
+  color: #fff;
+  border-color: var(--danger, #a33b4a);
+}
+
 /* Shared admin surfaces */
 .admin-shell .stat-grid {
   display: grid;

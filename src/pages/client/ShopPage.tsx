@@ -1,5 +1,6 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import { Search, X } from 'lucide-react';
 import { ProductCard } from '../../components/ProductCard';
 import { PromoBanner } from '../../components/PromoBanner';
 import { Seo } from '../../components/Seo';
@@ -19,6 +20,11 @@ export function ShopPage() {
   const brand = params.get('brand') ?? '';
   const color = params.get('color') ?? '';
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
+  const [searchDraft, setSearchDraft] = useState(q);
+
+  useEffect(() => {
+    setSearchDraft(q);
+  }, [q]);
 
   const shopTitle =
     kind !== 'all' && PRODUCT_KIND_LABELS[kind as ProductKind]
@@ -57,6 +63,7 @@ export function ShopPage() {
         if (!s) return true;
         return (
           p.title.toLowerCase().includes(s) ||
+          (p.description || '').toLowerCase().includes(s) ||
           p.category.toLowerCase().includes(s) ||
           p.location.toLowerCase().includes(s) ||
           p.seller.toLowerCase().includes(s) ||
@@ -85,6 +92,16 @@ export function ShopPage() {
   };
 
   const setKind = (next: string) => patch('kind', next === 'all' ? null : next);
+
+  const applySearch = (e: FormEvent) => {
+    e.preventDefault();
+    patch('q', searchDraft.trim() || null);
+  };
+
+  const clearSearch = () => {
+    setSearchDraft('');
+    patch('q', null);
+  };
 
   const title =
     kind === 'apparel' || kind === 'accessories'
@@ -197,19 +214,31 @@ export function ShopPage() {
             </div>
             <button
               type="button"
-              className="btn btn-secondary"
-              style={{ display: 'none' }}
+              className="btn btn-secondary ec-shop-filters-btn"
               onClick={() => setMobileFiltersOpen(true)}
             >
               Filters
             </button>
           </div>
 
-          <style>{`
-            @media (max-width: 860px) {
-              .ec-shop .ec-shop-head .btn { display: inline-flex !important; }
-            }
-          `}</style>
+          <form className="ec-shop-search" onSubmit={applySearch} role="search">
+            <Search size={18} aria-hidden />
+            <input
+              value={searchDraft}
+              onChange={(e) => setSearchDraft(e.target.value)}
+              placeholder="Search dresses, bags, jewelry…"
+              aria-label="Search collection"
+            />
+            {searchDraft || q ? (
+              <button type="button" className="ec-shop-search-clear" onClick={clearSearch}>
+                <X size={16} aria-hidden />
+                Clear
+              </button>
+            ) : null}
+            <button type="submit" className="btn btn-primary">
+              Search
+            </button>
+          </form>
 
           {list.length === 0 ? (
             <div className="ec-empty">No pieces match. Try another search or clear filters.</div>
@@ -227,22 +256,14 @@ export function ShopPage() {
         <div
           role="dialog"
           aria-modal="true"
-          style={{
-            position: 'fixed',
-            inset: 0,
-            zIndex: 50,
-            background: 'rgba(28,20,24,0.45)',
-            display: 'grid',
-            alignItems: 'end',
-          }}
+          className="ec-shop-filters-sheet"
           onClick={() => setMobileFiltersOpen(false)}
         >
           <div
             className="ec-filters"
-            style={{ margin: 0, borderRadius: '16px 16px 0 0' }}
             onClick={(e) => e.stopPropagation()}
           >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div className="ec-shop-filters-sheet-head">
               <strong>Filters & sort</strong>
               <button type="button" className="btn btn-primary" onClick={() => setMobileFiltersOpen(false)}>
                 Done
