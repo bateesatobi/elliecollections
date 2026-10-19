@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from 'react';
 import { Link, Navigate } from 'react-router-dom';
-import { ArrowLeft, Lock, Sparkles } from 'lucide-react';
+import { ArrowLeft, Lock } from 'lucide-react';
 import { useMarket } from '../../store/MarketStore';
 import {
   closeLoginProgress,
@@ -48,9 +48,10 @@ export function AdminLoginPage() {
       <aside className="admin-login-visual" style={{ backgroundImage: `url(${LOGIN_IMAGE})` }}>
         <div className="admin-login-veil" />
         <div className="admin-login-visual-copy">
-          <p className="admin-login-eyebrow">Elliecollections</p>
+          <img src="/icon.svg" alt="" className="admin-login-brand-mark" width={44} height={44} />
+          <p className="admin-login-eyebrow">Ellie Collections</p>
           <h1>Boutique console</h1>
-          <p>Catalogue, orders, promotions, and fulfilment — crafted for her brand.</p>
+          <p>Catalogue, orders, promotions, and fulfilment — in one place.</p>
         </div>
       </aside>
 
@@ -61,7 +62,7 @@ export function AdminLoginPage() {
 
         <form className="admin-login-card" onSubmit={onSubmit}>
           <div className="admin-login-mark">
-            <Sparkles size={18} />
+            <img src="/icon.svg" alt="" width={22} height={22} />
             <span>Admin access</span>
           </div>
           <h2>Sign in</h2>

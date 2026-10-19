@@ -72,16 +72,18 @@ export function CheckoutPage() {
 
   if (!cart.length && !successId) {
     return (
-      <div className="container section">
-        <h2>Nothing to checkout</h2>
-        <p className="muted">Add items to your bag first.</p>
-        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginTop: 8 }}>
-          <Link to="/shop" className="btn btn-primary">
-            Browse shop
-          </Link>
-          <Link to="/track" className="btn btn-secondary">
-            Track an order
-          </Link>
+      <div className="ec-sf">
+        <div className="ec-sf-module ec-sf-empty">
+          <h2>Nothing to checkout</h2>
+          <p className="muted">Add items to your bag first.</p>
+          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginTop: 8, justifyContent: 'center' }}>
+            <Link to="/shop" className="btn btn-primary">
+              Browse shop
+            </Link>
+            <Link to="/track" className="btn btn-secondary">
+              Track an order
+            </Link>
+          </div>
         </div>
       </div>
     );
@@ -99,8 +101,8 @@ export function CheckoutPage() {
       }),
     );
     return (
-      <div className="container section">
-        <div className="panel" style={{ maxWidth: 560 }}>
+      <div className="ec-sf">
+        <div className="ec-sf-module" style={{ maxWidth: 560, margin: '0 auto' }}>
           <div className="alert alert-ok">
             {successCash
               ? successFulfillment === 'pickup'
@@ -261,18 +263,23 @@ export function CheckoutPage() {
   };
 
   return (
-    <div className="container section">
+    <div className="ec-sf">
       <Seo title="Checkout" path="/checkout" noIndex />
-      <h2>Checkout</h2>
-      <p className="muted">
-        No account needed — enter your name and phone, choose delivery or shop pickup, then pay
-        with cash, MTN, or Airtel.
-      </p>
+      <header className="ec-sf-module">
+        <p className="eyebrow">Secure checkout</p>
+        <h1 style={{ margin: 0, fontSize: '1.55rem', fontWeight: 800 }}>Checkout</h1>
+        <p className="muted" style={{ margin: '0.45rem 0 0' }}>
+          No account needed — enter your name and phone, choose delivery or shop pickup, then pay
+          with cash, MTN, or Airtel.
+        </p>
+      </header>
 
-      <TrustStrip compact />
+      <div className="ec-sf-module" style={{ paddingTop: '0.85rem', paddingBottom: '0.85rem' }}>
+        <TrustStrip compact />
+      </div>
 
-      <div className="amz-checkout-grid" style={{ marginTop: 16 }}>
-        <div className="panel">
+      <div className="amz-checkout-grid">
+        <div className="ec-sf-module">
           <form onSubmit={onPay}>
             {customer ? (
               <div className="alert alert-ok" style={{ marginBottom: 12 }}>
@@ -466,8 +473,8 @@ export function CheckoutPage() {
           </form>
         </div>
 
-        <aside className="panel">
-          <h3 style={{ marginTop: 0 }}>Order summary</h3>
+        <aside className="ec-sf-module">
+          <h3 style={{ marginTop: 0, fontWeight: 800 }}>Order summary</h3>
           {cart.map((line) => {
             const p = products.find((x) => x.id === line.productId);
             if (!p) return null;

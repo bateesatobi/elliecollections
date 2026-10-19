@@ -161,7 +161,10 @@ export function ClientLayout() {
         </button>
         <div className="ec-footer-grid container-wide">
           <div>
-            <h4>Elliecollections</h4>
+            <h4 className="ec-footer-title">
+              <img src="/icon.svg" alt="" width={28} height={28} />
+              Ellie Collections
+            </h4>
             <p>Feminine fashion curated for the modern woman — apparel, accessories, and beauty.</p>
             <p className="ec-footer-shop">
               Ships across {SHOP.region} ·{' '}
@@ -193,7 +196,7 @@ export function ClientLayout() {
             <a href={`tel:+${SHOP.whatsapp}`}>{SHOP.phoneDisplay}</a>
           </div>
         </div>
-        <div className="ec-footer-brand">Elliecollections</div>
+        <div className="ec-footer-brand">Ellie Collections</div>
       </footer>
     </div>
   );

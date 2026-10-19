@@ -222,20 +222,22 @@ export function ShopPage() {
   );
 
   return (
-    <div className="ec-shop container-wide">
+    <div className="ec-shop">
       <Seo
         title={shopTitle}
         description={`Browse ${shopTitle.toLowerCase()} at Elliecollections — feminine fashion, apparel, and accessories with delivery across East Africa.`}
         path={shopPath}
       />
-      <PromoBanner />
+      <div className="ec-shop-promo">
+        <PromoBanner />
+      </div>
       <div className="ec-shop-layout">
         <aside className="ec-filters">{Filters}</aside>
 
-        <section>
+        <section className="ec-shop-main">
           <div className="ec-shop-head">
             <div>
-              <p className="eyebrow">Elliecollections</p>
+              <p className="eyebrow">Shop</p>
               <h1>
                 {q ? `“${q}”` : title}
                 {kind !== 'all' && q ? ` in ${title}` : ''}

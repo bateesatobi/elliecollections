@@ -80,13 +80,12 @@ export function ProductReviews({ productId }: Props) {
   };
 
   return (
-    <section className="ec-reviews container" style={{ padding: '1.5rem 0 3rem' }}>
-      <div className="ec-section-head">
+    <section className="ec-reviews ec-sf" style={{ paddingTop: 0 }}>
+      <div className="ec-sf-module">
+      <div className="ec-sf-head">
         <div>
           <p className="eyebrow">Customer voices</p>
-          <h2 style={{ margin: 0, fontFamily: 'var(--display)', fontSize: '1.8rem' }}>
-            Reviews
-          </h2>
+          <h1 style={{ fontSize: '1.35rem' }}>Reviews</h1>
           <p className="muted" style={{ margin: '0.35rem 0 0' }}>
             {loading
               ? 'Loading…'
@@ -124,7 +123,7 @@ export function ProductReviews({ productId }: Props) {
           )}
         </div>
 
-        <aside className="panel ec-review-form-wrap">
+        <aside className="ec-sf-module ec-review-form-wrap" style={{ background: '#faf6f7', padding: '1rem' }}>
           <h3 style={{ marginTop: 0 }}>Write a review</h3>
           {!customer ? (
             <div>
@@ -189,6 +188,7 @@ export function ProductReviews({ productId }: Props) {
             </form>
           )}
         </aside>
+      </div>
       </div>
     </section>
   );

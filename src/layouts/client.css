@@ -1,10 +1,10 @@
-/* Elliecollections storefront chrome */
+/* Elliecollections storefront chrome — matches Walmart-style home modules */
 .client-shell {
   min-height: 100dvh;
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  background: var(--rose-mist);
+  background: #f2ecee;
 }
 
 .ec-header {
@@ -209,10 +209,63 @@
   width: 100%;
   display: flex;
   flex-direction: column;
+  background: #f2ecee;
 }
 
 .ec-main > * {
   width: 100%;
+}
+
+/* Shared storefront page shell */
+.ec-sf {
+  width: min(1280px, calc(100% - 1.5rem));
+  margin: 0 auto;
+  padding: 1rem 0 2.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.ec-sf-module {
+  background: #fff;
+  border-radius: 16px;
+  padding: 1.15rem 1.25rem 1.35rem;
+}
+
+.ec-sf-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.85rem;
+}
+
+.ec-sf-head h1 {
+  margin: 0;
+  font-family: var(--font);
+  font-size: clamp(1.45rem, 3vw, 1.85rem);
+  font-weight: 800;
+  color: var(--ink);
+  line-height: 1.15;
+}
+
+.ec-sf-head .eyebrow {
+  margin: 0 0 0.25rem;
+}
+
+.ec-sf-empty {
+  text-align: center;
+  padding: 2.5rem 1.25rem;
+  color: var(--muted);
+}
+
+.ec-sf-empty h2 {
+  margin: 0.65rem 0 0.4rem;
+  font-family: var(--font);
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: var(--ink);
 }
 
 .ec-footer {
@@ -247,6 +300,18 @@
   font-size: 1.25rem;
   color: var(--white);
   font-weight: 600;
+}
+
+.ec-footer-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+}
+
+.ec-footer-title img {
+  width: 1.65rem;
+  height: 1.65rem;
+  border-radius: 8px;
 }
 
 .ec-footer-grid a,
@@ -307,41 +372,50 @@
 
 /* Shop / catalogue */
 .ec-shop {
-  padding: 1.5rem 0 3rem;
+  width: min(1280px, calc(100% - 1.5rem));
+  margin: 0 auto;
+  padding: 1rem 0 2.5rem;
+}
+
+.ec-shop-promo .ec-promo-banner {
+  margin-bottom: 0.85rem;
 }
 
 .ec-shop-layout {
   display: grid;
-  grid-template-columns: 220px 1fr;
-  gap: 1.75rem;
+  grid-template-columns: 240px 1fr;
+  gap: 0.85rem;
   align-items: start;
 }
 
 .ec-filters {
   position: sticky;
   top: 110px;
-  background: var(--white);
-  border: 1px solid var(--line);
-  padding: 1.25rem;
+  background: #fff;
+  border: none;
+  border-radius: 16px;
+  padding: 1.15rem 1.1rem;
   display: grid;
-  gap: 0.85rem;
+  gap: 0.75rem;
 }
 
 .ec-filters h3 {
   margin: 0;
-  font-family: var(--display);
-  font-size: 1.35rem;
+  font-family: var(--font);
+  font-size: 1.15rem;
+  font-weight: 800;
 }
 
 .ec-filter-chip {
   border: 1px solid var(--line);
-  background: var(--ivory);
+  background: #faf6f7;
   color: var(--ink-soft);
   padding: 0.55rem 0.85rem;
   text-align: left;
   cursor: pointer;
-  font-weight: 600;
+  font-weight: 650;
   font-size: 0.85rem;
+  border-radius: 999px;
   transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
 }
 
@@ -350,6 +424,13 @@
   background: var(--ink);
   color: var(--white);
   border-color: var(--ink);
+}
+
+.ec-shop-main {
+  background: #fff;
+  border-radius: 16px;
+  padding: 1.15rem 1.2rem 1.5rem;
+  min-width: 0;
 }
 
 .ec-shop-head {
@@ -362,9 +443,9 @@
 
 .ec-shop-head h1 {
   margin: 0;
-  font-family: var(--display);
-  font-size: clamp(1.8rem, 3vw, 2.4rem);
-  font-weight: 600;
+  font-family: var(--font);
+  font-size: clamp(1.45rem, 3vw, 1.9rem);
+  font-weight: 800;
   line-height: 1.15;
 }
 
@@ -376,10 +457,11 @@
   display: flex;
   align-items: center;
   gap: 0.65rem;
-  margin-bottom: 1.35rem;
+  margin-bottom: 1.15rem;
   padding: 0.45rem 0.55rem 0.45rem 0.95rem;
   border: 1px solid var(--line);
-  background: var(--white);
+  border-radius: 999px;
+  background: #faf6f7;
   color: var(--ink-soft);
 }
 
@@ -436,21 +518,22 @@
 
 .ec-product-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 1.75rem;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 0.85rem;
 }
 
 .ec-product-card {
-  background: var(--white);
+  background: #fff;
   border: 1px solid transparent;
+  border-radius: 12px;
   overflow: hidden;
-  transition: transform 0.35s ease, box-shadow 0.35s ease, border-color 0.35s ease;
+  transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
   animation: fadeUp 0.6s ease both;
 }
 
 .ec-product-card:hover {
-  transform: translateY(-4px);
-  box-shadow: var(--shadow);
+  transform: translateY(-2px);
+  box-shadow: 0 10px 28px rgba(28, 20, 24, 0.08);
   border-color: var(--line);
 }
 
@@ -553,17 +636,19 @@
 .amz-pdp {
   display: grid;
   grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr) 280px;
-  gap: 1.5rem;
-  padding: 1.5rem 0 3rem;
-  width: min(1280px, calc(100% - 2rem));
-  margin-inline: auto;
+  gap: 0.85rem;
+  padding: 1rem 1.15rem 1.5rem;
+  width: min(1280px, calc(100% - 1.5rem));
+  margin: 1rem auto 2rem;
+  background: #fff;
+  border-radius: 16px;
 }
 
 .amz-pdp-info h1 {
   margin: 0 0 0.5rem;
-  font-family: var(--display);
-  font-size: clamp(1.6rem, 3vw, 2.2rem);
-  font-weight: 600;
+  font-family: var(--font);
+  font-size: clamp(1.45rem, 2.8vw, 1.9rem);
+  font-weight: 800;
 }
 
 .amz-pdp-seller { font-size: 0.9rem; color: var(--muted); margin-bottom: 0.5rem; }
@@ -575,18 +660,19 @@
   font-weight: 800;
   padding: 0.25rem 0.55rem;
   margin-bottom: 0.5rem;
+  border-radius: 6px;
 }
 
 .amz-buybox {
-  border: 1px solid var(--line);
-  background: var(--white);
+  border: none;
+  background: #faf6f7;
   padding: 1.25rem;
   display: grid;
   gap: 0.75rem;
   align-content: start;
   position: sticky;
   top: 110px;
-  border-radius: 4px;
+  border-radius: 14px;
 }
 
 .amz-buybox .stock { color: #2f6b4f; font-weight: 700; font-size: 0.9rem; }
@@ -624,23 +710,26 @@
 .amz-cart-page {
   display: grid;
   grid-template-columns: 1fr 300px;
-  gap: 1.25rem;
-  width: min(1280px, calc(100% - 2rem));
-  margin: 1.5rem auto 3rem;
+  gap: 0.85rem;
+  width: min(1280px, calc(100% - 1.5rem));
+  margin: 1rem auto 2.5rem;
 }
 
 .amz-cart-list,
-.amz-cart-summary {
-  background: var(--white);
-  border: 1px solid var(--line);
-  padding: 1.25rem;
+.amz-cart-summary,
+.amz-cart-subtotal {
+  background: #fff;
+  border: none;
+  border-radius: 16px;
+  padding: 1.2rem 1.25rem;
 }
 
 .amz-cart-list h1,
 .amz-cart-summary h2 {
   margin: 0 0 1rem;
-  font-family: var(--display);
-  font-weight: 600;
+  font-family: var(--font);
+  font-size: 1.45rem;
+  font-weight: 800;
 }
 
 .amz-cart-line {
@@ -927,8 +1016,17 @@
 .amz-order-grid {
   display: grid;
   grid-template-columns: 1.2fr 0.85fr;
-  gap: 1.25rem;
+  gap: 0.85rem;
   align-items: start;
+}
+
+.ec-text-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-weight: 750;
+  font-size: 0.88rem;
+  color: var(--blush-deep);
 }
 
 .amz-track {
@@ -1290,22 +1388,25 @@
 /* —— Client orders page & cards —— */
 .ec-orders-page {
   animation: fadeUp 0.5s ease both;
+  width: min(1280px, calc(100% - 1.5rem));
+  margin: 0 auto;
+  padding: 1rem 0 2.5rem;
 }
 
 .ec-orders-hero {
-  padding: 2.75rem 0 2rem;
-  background:
-    radial-gradient(ellipse at 10% 0%, rgba(212, 165, 165, 0.28), transparent 50%),
-    linear-gradient(180deg, var(--ivory) 0%, var(--rose-mist) 100%);
-  border-bottom: 1px solid var(--line);
+  padding: 1.25rem 1.3rem 1.35rem;
+  background: #fff;
+  border: none;
+  border-radius: 16px;
+  margin-bottom: 0.85rem;
 }
 
 .ec-orders-hero h1 {
   margin: 0;
-  font-family: var(--display);
-  font-size: clamp(2.1rem, 4vw, 2.85rem);
-  font-weight: 600;
-  line-height: 1.1;
+  font-family: var(--font);
+  font-size: clamp(1.45rem, 3vw, 1.9rem);
+  font-weight: 800;
+  line-height: 1.15;
 }
 
 .ec-orders-lead {
@@ -1352,7 +1453,7 @@
 }
 
 .ec-orders-body {
-  padding: 1.75rem 0 3.5rem;
+  padding: 1.15rem 1.2rem 1.4rem;
 }
 
 .ec-orders-filters {
@@ -1978,10 +2079,33 @@
   font-weight: 600;
 }
 
+.ec-help-page {
+  width: min(960px, calc(100% - 1.5rem));
+  margin: 1rem auto 2.5rem;
+  padding: 1.25rem 1.3rem 1.6rem;
+  background: #fff;
+  border-radius: 16px;
+}
+
+.ec-help-page h1 {
+  margin: 0;
+  font-family: var(--font);
+  font-size: clamp(1.45rem, 3vw, 1.85rem);
+  font-weight: 800;
+}
+
 .ec-help-page h2 {
-  font-family: var(--display);
-  font-size: 1.35rem;
+  font-family: var(--font);
+  font-size: 1.15rem;
+  font-weight: 800;
   margin: 0 0 0.75rem;
+}
+
+.ec-help-page .panel {
+  background: #faf6f7;
+  border: none;
+  border-radius: 14px;
+  padding: 1.1rem 1.15rem;
 }
 
 .ec-help-grid {
@@ -2081,19 +2205,25 @@
   }
 }
 
+.ec-page {
+  width: min(1280px, calc(100% - 1.5rem));
+  margin: 0 auto;
+  padding: 1rem 0 2.5rem;
+}
+
 .ec-page-hero {
-  padding: 2.6rem 0 2rem;
-  background:
-    radial-gradient(ellipse at 8% 0%, rgba(212, 165, 165, 0.28), transparent 52%),
-    linear-gradient(180deg, var(--ivory) 0%, var(--rose-mist, #f7f1f2) 100%);
-  border-bottom: 1px solid var(--line);
+  padding: 1.15rem 1.25rem 1.25rem;
+  background: #fff;
+  border: none;
+  border-radius: 16px;
+  margin-bottom: 0.85rem;
 }
 
 .ec-page-hero h1 {
   margin: 0;
-  font-family: var(--display);
-  font-size: clamp(2rem, 4vw, 2.7rem);
-  font-weight: 600;
+  font-family: var(--font);
+  font-size: clamp(1.45rem, 3vw, 1.9rem);
+  font-weight: 800;
 }
 
 .ec-page-hero .muted {
@@ -2110,22 +2240,23 @@
 }
 
 .ec-page-body {
-  padding: 1.75rem 0 3.5rem;
+  padding: 0;
 }
 
 .ec-page-card {
-  background: var(--white);
-  border: 1px solid var(--line);
-  padding: 1.35rem 1.4rem 1.5rem;
+  background: #fff;
+  border: none;
+  border-radius: 16px;
+  padding: 1.25rem 1.3rem 1.4rem;
   display: grid;
   gap: 0.95rem;
 }
 
 .ec-page-card h2 {
   margin: 0;
-  font-family: var(--display);
-  font-size: 1.55rem;
-  font-weight: 600;
+  font-family: var(--font);
+  font-size: 1.25rem;
+  font-weight: 800;
 }
 
 .ec-page-actions {
@@ -2138,9 +2269,10 @@
   display: inline-flex;
   gap: 0.35rem;
   padding: 0.25rem;
-  background: var(--ivory);
-  border: 1px solid var(--line);
-  margin-bottom: 1.25rem;
+  background: #fff;
+  border: none;
+  border-radius: 999px;
+  margin-bottom: 0.85rem;
 }
 
 .ec-page-tabs button {

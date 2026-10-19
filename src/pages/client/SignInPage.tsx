@@ -85,7 +85,8 @@ export function SignInPage() {
         <div className="ec-signin-veil" />
         <div className="ec-signin-visual-copy">
           <p className="ec-signin-brand">
-            Ellie<em>collections</em>
+            <img src="/icon.svg" alt="" width={32} height={32} style={{ borderRadius: '50%', marginRight: 10, verticalAlign: 'middle' }} />
+            Ellie <em>Collections</em>
           </p>
           <h2>Your number is your account</h2>
           <p>No password. No OTP. Just the phone you use for MoMo and WhatsApp.</p>

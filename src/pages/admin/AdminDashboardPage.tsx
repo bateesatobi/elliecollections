@@ -27,7 +27,7 @@ export function AdminDashboardPage() {
   } = useAdminPagination(orders, 10, orders.length);
 
   return (
-    <div>
+    <div className="admin-dash">
       <div className="stat-grid">
         <div className="stat-card">
           <div className="label">Gross revenue</div>
@@ -51,12 +51,12 @@ export function AdminDashboardPage() {
         </div>
       </div>
 
-      <div className="panel" style={{ marginTop: 16 }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+      <div className="panel" style={{ marginTop: 12 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
           <div>
             <h3 style={{ margin: 0 }}>Quick actions</h3>
             <p className="muted" style={{ margin: '0.35rem 0 0' }}>
-              Jump into catalogue or fulfilment workflows
+              Catalogue, fulfilment, and finance
             </p>
           </div>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
@@ -66,21 +66,24 @@ export function AdminDashboardPage() {
             <Link to="/admin/orders" className="btn btn-secondary">
               Review orders
             </Link>
+            <Link to="/admin/requests" className="btn btn-secondary">
+              Piece requests
+            </Link>
             <Link to="/admin/revenue" className="btn btn-secondary">
-              Revenue charts
+              Revenue
             </Link>
             <Link to="/admin/disbursements" className="btn btn-secondary">
-              Disburse sellers
+              Disburse
             </Link>
             <button type="button" className="btn btn-ghost" onClick={resetDemoData}>
-              Reset demo data
+              Reset demo
             </button>
           </div>
         </div>
       </div>
 
-      <div className="panel" style={{ marginTop: 16, padding: 0, overflow: 'hidden' }}>
-        <div style={{ padding: '1rem 1.1rem 0.4rem' }}>
+      <div className="panel" style={{ marginTop: 12, padding: 0, overflow: 'hidden' }}>
+        <div style={{ padding: '1.05rem 1.15rem 0.5rem' }}>
           <h3 style={{ margin: 0 }}>Latest orders</h3>
         </div>
         <div className="table-wrap" style={{ border: 0, borderRadius: 0 }}>

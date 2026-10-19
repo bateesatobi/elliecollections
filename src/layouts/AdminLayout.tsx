@@ -104,12 +104,15 @@ export function AdminLayout() {
   return (
     <div className={`admin-shell${navOpen ? ' nav-open' : ''}`}>
       <aside className="admin-aside">
-        <div className="admin-brand">
-          <strong>
-            Ellie<em>collections</em>
-          </strong>
-          <span>Admin console</span>
-        </div>
+        <Link to="/" className="admin-brand" title="Open storefront">
+          <img src="/icon.svg" alt="" className="admin-brand-mark" width={36} height={36} />
+          <div>
+            <strong>
+              Ellie <em>Collections</em>
+            </strong>
+            <span>Admin console</span>
+          </div>
+        </Link>
 
         <nav onClick={() => setNavOpen(false)}>
           <p className="admin-nav-label">Boutique</p>
@@ -134,9 +137,14 @@ export function AdminLayout() {
           })}
         </nav>
 
-        <button type="button" className="admin-logout" onClick={logoutAdmin}>
-          <LogOut size={16} /> Sign out
-        </button>
+        <div className="admin-aside-foot">
+          <Link to="/" className="admin-storefront-link">
+            View storefront
+          </Link>
+          <button type="button" className="admin-logout" onClick={logoutAdmin}>
+            <LogOut size={16} /> Sign out
+          </button>
+        </div>
       </aside>
 
       {navOpen ? (

@@ -51,43 +51,41 @@ export function OrdersPage() {
       />
 
       <header className="ec-orders-hero">
-        <div className="container">
-          <p className="eyebrow">Hello, {customer.name.split(' ')[0]}</p>
-          <h1>Your orders</h1>
-          <p className="ec-orders-lead">
-            Follow packing, delivery, and pickup — or message us on WhatsApp anytime.
-          </p>
-          <div className="ec-orders-stats">
-            <div>
-              <strong>{mine.length}</strong>
-              <span>Total</span>
-            </div>
-            <div>
-              <strong>{currentCount}</strong>
-              <span>In progress</span>
-            </div>
-            <div>
-              <strong>{doneCount}</strong>
-              <span>Completed</span>
-            </div>
+        <p className="eyebrow">Hello, {customer.name.split(' ')[0]}</p>
+        <h1>Your orders</h1>
+        <p className="ec-orders-lead">
+          Follow packing, delivery, and pickup — or message us on WhatsApp anytime.
+        </p>
+        <div className="ec-orders-stats">
+          <div>
+            <strong>{mine.length}</strong>
+            <span>Total</span>
           </div>
-          <div className="ec-orders-hero-actions">
-            <Link to="/track" className="btn btn-secondary">
-              <Search size={15} /> Track by phone
-            </Link>
-            {wa ? (
-              <a href={wa} className="btn btn-secondary" target="_blank" rel="noreferrer">
-                WhatsApp {SHOP.phoneDisplay}
-              </a>
-            ) : null}
-            <Link to="/shop" className="btn btn-primary">
-              Continue shopping
-            </Link>
+          <div>
+            <strong>{currentCount}</strong>
+            <span>In progress</span>
           </div>
+          <div>
+            <strong>{doneCount}</strong>
+            <span>Completed</span>
+          </div>
+        </div>
+        <div className="ec-orders-hero-actions">
+          <Link to="/track" className="btn btn-secondary">
+            <Search size={15} /> Track by phone
+          </Link>
+          {wa ? (
+            <a href={wa} className="btn btn-secondary" target="_blank" rel="noreferrer">
+              WhatsApp {SHOP.phoneDisplay}
+            </a>
+          ) : null}
+          <Link to="/shop" className="btn btn-primary">
+            Continue shopping
+          </Link>
         </div>
       </header>
 
-      <div className="container ec-orders-body">
+      <div className="ec-orders-body ec-sf-module">
         {mine.length > 0 ? (
           <div className="ec-orders-filters" role="tablist" aria-label="Filter orders">
             {(

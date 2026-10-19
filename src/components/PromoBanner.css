@@ -1,11 +1,12 @@
 .ec-promo-banner {
   position: relative;
-  min-height: 220px;
-  margin: 0 0 1.5rem;
+  min-height: 200px;
+  margin: 0 0 0.85rem;
   overflow: hidden;
   color: #fff;
   display: grid;
   align-items: center;
+  border-radius: 16px;
 }
 
 .ec-promo-bg {

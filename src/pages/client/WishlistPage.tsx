@@ -18,7 +18,7 @@ export function WishlistPage() {
     <div className="ec-page">
       <Seo title="Wishlist" path="/wishlist" noIndex />
       <header className="ec-page-hero">
-        <div className="container-wide ec-page-hero-row">
+        <div className="ec-page-hero-row">
           <div>
             <p className="eyebrow">Saved for later</p>
             <h1>Wishlist</h1>
@@ -32,15 +32,15 @@ export function WishlistPage() {
         </div>
       </header>
 
-      <div className="container-wide ec-page-body">
+      <div className="ec-page-body">
         {list.length === 0 ? (
-          <div className="ec-page-card ec-request-gate">
+          <div className="ec-page-card ec-request-gate ec-sf-empty">
             <Heart size={28} />
             <h2>Nothing saved yet</h2>
             <p className="muted">
               Tap the heart on a dress, bag, or accessory and it will wait for you here.
             </p>
-            <div className="ec-page-actions">
+            <div className="ec-page-actions" style={{ justifyContent: 'center' }}>
               <Link to="/shop" className="btn btn-primary">
                 Browse the collection
               </Link>
@@ -50,10 +50,12 @@ export function WishlistPage() {
             </div>
           </div>
         ) : (
-          <div className="ec-product-grid">
-            {list.map((p) => (
-              <ProductCard key={p.id} product={p} />
-            ))}
+          <div className="ec-sf-module">
+            <div className="ec-product-grid">
+              {list.map((p) => (
+                <ProductCard key={p.id} product={p} />
+              ))}
+            </div>
           </div>
         )}
       </div>

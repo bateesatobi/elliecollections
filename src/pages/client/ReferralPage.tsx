@@ -56,16 +56,14 @@ export function ReferralPage() {
         path="/refer"
       />
       <header className="ec-page-hero">
-        <div className="container-wide">
-          <p className="eyebrow">Invite &amp; earn love</p>
-          <h1>Refer a friend</h1>
-          <p className="muted">
-            Send your link. When she joins or shops with it, we credit the referral to you.
-          </p>
-        </div>
+        <p className="eyebrow">Invite &amp; earn love</p>
+        <h1>Refer a friend</h1>
+        <p className="muted">
+          Send your link. When she joins or shops with it, we credit the referral to you.
+        </p>
       </header>
 
-      <div className="container-wide ec-page-body">
+      <div className="ec-page-body">
         {!customer ? (
           <div className="ec-page-card ec-request-gate">
             <Gift size={28} />

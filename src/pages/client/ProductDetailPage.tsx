@@ -557,19 +557,22 @@ export function ProductDetailPage() {
       <ProductReviews productId={product.id} />
 
       {related.length > 0 ? (
-        <section className="container" style={{ padding: '1rem 0 3rem' }}>
-          <div className="ec-section-head">
-            <div>
-              <p className="eyebrow">Recommended for you</p>
-              <h2 style={{ margin: 0, fontFamily: 'var(--display)', fontSize: '1.8rem' }}>
-                You may also like
-              </h2>
+        <section className="ec-sf" style={{ paddingTop: 0 }}>
+          <div className="ec-sf-module">
+            <div className="ec-sf-head">
+              <div>
+                <p className="eyebrow">Recommended for you</p>
+                <h1 style={{ fontSize: '1.35rem' }}>You may also like</h1>
+              </div>
+              <Link to="/shop" className="ec-text-link">
+                View all
+              </Link>
             </div>
-          </div>
-          <div className="ec-product-grid">
-            {related.map((p) => (
-              <ProductCard key={p.id} product={p} />
-            ))}
+            <div className="ec-product-grid">
+              {related.map((p) => (
+                <ProductCard key={p.id} product={p} />
+              ))}
+            </div>
           </div>
         </section>
       ) : null}

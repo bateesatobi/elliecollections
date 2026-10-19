@@ -17,14 +17,14 @@ export function SizeGuidePage() {
   );
 
   return (
-    <div className="container section ec-help-page">
+    <div className="ec-help-page">
       <Seo
         title="Size guide"
         description="Elliecollections size chart and fit tips — measure once, order with confidence."
         path="/size-guide"
       />
       <p className="eyebrow">Fit with confidence</p>
-      <h1 style={{ fontFamily: 'var(--display)', marginTop: 0 }}>Size guide</h1>
+      <h1>Size guide</h1>
       <p className="muted" style={{ maxWidth: 540 }}>
         Soft tapes work best. Measure over light clothing. If you’re between sizes, WhatsApp us a
         photo or your usual brand size — we’ll recommend before you pay.

@@ -87,16 +87,14 @@ export function RequestPiecePage() {
         path="/request"
       />
       <header className="ec-page-hero">
-        <div className="container-wide">
-          <p className="eyebrow">Can’t find it?</p>
-          <h1>Request a piece</h1>
-          <p className="muted">
-            Send a photo and a short note. We reach you on the mobile number on your account.
-          </p>
-        </div>
+        <p className="eyebrow">Can’t find it?</p>
+        <h1>Request a piece</h1>
+        <p className="muted">
+          Send a photo and a short note. We reach you on the mobile number on your account.
+        </p>
       </header>
 
-      <div className="container-wide ec-page-body">
+      <div className="ec-page-body">
         {!customer ? (
           <div className="ec-page-card ec-request-gate">
             <Sparkles size={28} />

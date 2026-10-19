@@ -137,7 +137,7 @@ export function TrackOrderPage() {
           path="/track"
           noIndex
         />
-        <div className="container-wide ec-page-body">
+        <div className="ec-page-body">
           <button
             type="button"
             className="btn btn-secondary"
@@ -146,7 +146,9 @@ export function TrackOrderPage() {
           >
             ← All orders
           </button>
-          <OrderTrackingPanel order={selected} showBackLink={false} />
+          <div className="ec-sf-module">
+            <OrderTrackingPanel order={selected} showBackLink={false} />
+          </div>
         </div>
       </div>
     );
@@ -161,16 +163,14 @@ export function TrackOrderPage() {
       />
 
       <header className="ec-page-hero">
-        <div className="container-wide">
-          <p className="eyebrow">Delivery status</p>
-          <h1>Track your order</h1>
-          <p className="muted">
-            Use the phone from checkout. Live orders sit at the top; tap a card for the full timeline.
-          </p>
-        </div>
+        <p className="eyebrow">Delivery status</p>
+        <h1>Track your order</h1>
+        <p className="muted">
+          Use the phone from checkout. Live orders sit at the top; tap a card for the full timeline.
+        </p>
       </header>
 
-      <div className="container-wide ec-page-body">
+      <div className="ec-page-body">
         {customer ? (
           <div className="ec-page-tabs">
             <button

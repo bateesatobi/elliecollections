@@ -32,11 +32,13 @@ export function CartPage() {
 
   if (!lines.length) {
     return (
-      <div className="container-wide" style={{ padding: '1.5rem 0' }}>
+      <div className="ec-sf">
         <Seo title="Your bag" path="/cart" noIndex />
-        <div className="amz-cart-list">
-          <h1>Your bag is empty</h1>
-          <p style={{ color: 'var(--muted)' }}>
+        <div className="ec-sf-module ec-sf-empty">
+          <h1 className="ec-sf-head" style={{ justifyContent: 'center', marginBottom: 0 }}>
+            Your bag is empty
+          </h1>
+          <p style={{ color: 'var(--muted)', maxWidth: 420, margin: '0.75rem auto' }}>
             Browse the collection, add pieces you love, then checkout with just your name and
             phone — no account required.
           </p>
@@ -52,7 +54,7 @@ export function CartPage() {
     <div className="amz-cart-page">
       <Seo title="Your bag" path="/cart" noIndex />
       <div className="amz-cart-list">
-        <h1>Shopping Cart</h1>
+        <h1>Your bag</h1>
         <p style={{ margin: 0, color: '#565959', fontSize: 14, textAlign: 'right' }}>
           Price ({currency.code})
         </p>

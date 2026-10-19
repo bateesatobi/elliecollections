@@ -8,14 +8,14 @@ export function ReturnsPage() {
   );
 
   return (
-    <div className="container section ec-help-page">
+    <div className="ec-help-page">
       <Seo
         title="Returns & exchanges"
         description={`Return or exchange Elliecollections pieces within ${SHOP.returnsWindowDays} days — unworn, with tags.`}
         path="/returns"
       />
       <p className="eyebrow">Shop with peace of mind</p>
-      <h1 style={{ fontFamily: 'var(--display)', marginTop: 0 }}>Returns &amp; exchanges</h1>
+      <h1>Returns &amp; exchanges</h1>
       <p className="muted" style={{ maxWidth: 560 }}>
         Fashion online should feel as safe as trying something in store. If the fit isn’t right,
         we’ll help you exchange or return.
