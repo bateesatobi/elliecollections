@@ -82,6 +82,7 @@ type MarketContextValue = {
     opts?: { trackingNumber?: string; trackingCarrier?: string },
   ) => Promise<string | null>;
   refundOrder: (id: string, amountUgx: number, note: string) => Promise<string | null>;
+  deleteOrder: (id: string) => Promise<string | null>;
   upsertUser: (user: User) => Promise<string | null>;
   deleteUser: (id: string) => Promise<string | null>;
   resetDemoData: () => Promise<void>;
@@ -493,6 +494,21 @@ export function MarketProvider({ children }: { children: ReactNode }) {
     [refreshAdminData],
   );
 
+  const deleteOrder = useCallback(
+    async (id: string) => {
+      const token = getAdminToken();
+      if (!token) return 'Admin login required.';
+      try {
+        await marketApi.deleteOrder(token, id);
+        await refreshAdminData(token);
+        return null;
+      } catch (e) {
+        return e instanceof Error ? e.message : 'Delete failed.';
+      }
+    },
+    [refreshAdminData],
+  );
+
   const upsertUser = useCallback(
     async (user: User) => {
       const token = getAdminToken();
@@ -559,6 +575,7 @@ export function MarketProvider({ children }: { children: ReactNode }) {
     deleteProduct,
     updateOrderStatus,
     refundOrder,
+    deleteOrder,
     upsertUser,
     deleteUser,
     resetDemoData,

@@ -3,6 +3,7 @@ import { AdminModal, AdminRowMenu } from '../../components/admin/AdminChrome';
 import { AdminPagination, useAdminPagination } from '../../components/admin/AdminPagination';
 import { formatUgx, useMarket } from '../../store/MarketStore';
 import type { Order, OrderStatus } from '../../types';
+import { swalConfirm, swalError, swalSuccess } from '../../utils/swal';
 
 const STATUSES: OrderStatus[] = [
   'pending',
@@ -15,7 +16,7 @@ const STATUSES: OrderStatus[] = [
 ];
 
 export function AdminOrdersPage() {
-  const { orders, updateOrderStatus, refundOrder } = useMarket();
+  const { orders, updateOrderStatus, refundOrder, deleteOrder } = useMarket();
   const [viewing, setViewing] = useState<Order | null>(null);
   const [updating, setUpdating] = useState<Order | null>(null);
   const [statusDraft, setStatusDraft] = useState<OrderStatus>('paid');
@@ -25,6 +26,7 @@ export function AdminOrdersPage() {
   const [amount, setAmount] = useState('');
   const [note, setNote] = useState('Customer requested refund');
   const [error, setError] = useState<string | null>(null);
+  const [deleteBusy, setDeleteBusy] = useState(false);
   const {
     pageItems,
     page,
@@ -53,12 +55,32 @@ export function AdminOrdersPage() {
     setTrackingCarrier(o.trackingCarrier || '');
   };
 
+  const permanentlyDelete = async (o: Order) => {
+    const ok = await swalConfirm(
+      'Delete order permanently?',
+      `Remove order ${o.id} for ${o.customerName}. This cannot be undone.`,
+    );
+    if (!ok) return;
+    setDeleteBusy(true);
+    setError(null);
+    const err = await deleteOrder(o.id);
+    setDeleteBusy(false);
+    if (err) {
+      setError(err);
+      await swalError('Delete failed', err);
+      return;
+    }
+    if (viewing?.id === o.id) setViewing(null);
+    if (updating?.id === o.id) setUpdating(null);
+    await swalSuccess('Order deleted', 'The order was permanently removed.');
+  };
+
   return (
     <div>
       <div className="admin-page-head">
         <div>
           <h2>Orders & fulfilment</h2>
-          <p>View details, update status, and process refunds</p>
+          <p>View details, update status, refund, or permanently delete</p>
         </div>
       </div>
 
@@ -125,19 +147,25 @@ export function AdminOrdersPage() {
                       items={[
                         { label: 'View', onClick: () => setViewing(o) },
                         {
-                          label: 'Update',
+                          label: 'Update status',
                           onClick: () => openUpdate(o),
-                          disabled: o.status === 'refunded',
+                          disabled: o.status === 'refunded' || deleteBusy,
                         },
                         {
                           label: 'Refund',
                           tone: 'danger',
-                          disabled: o.status === 'refunded',
+                          disabled: o.status === 'refunded' || deleteBusy,
                           onClick: () => {
                             setRefundId(o.id);
                             setAmount(String(o.totalUgx));
                             setError(null);
                           },
+                        },
+                        {
+                          label: 'Delete permanently',
+                          tone: 'danger',
+                          disabled: deleteBusy,
+                          onClick: () => void permanentlyDelete(o),
                         },
                       ]}
                     />
@@ -166,6 +194,15 @@ export function AdminOrdersPage() {
         footer={
           viewing ? (
             <>
+              <button
+                type="button"
+                className="btn btn-ghost"
+                style={{ marginRight: 'auto' }}
+                disabled={deleteBusy}
+                onClick={() => void permanentlyDelete(viewing)}
+              >
+                Delete permanently
+              </button>
               <button type="button" className="btn btn-ghost" onClick={() => setViewing(null)}>
                 Close
               </button>

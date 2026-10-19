@@ -731,10 +731,167 @@
 
 .admin-form-section h4 {
   margin: 0;
-  font-family: var(--display);
-  font-size: 1.15rem;
-  font-weight: 600;
+  font-family: var(--font);
+  font-size: 1.1rem;
+  font-weight: 800;
   color: var(--admin-ink);
+}
+
+.admin-option-block {
+  background: #fff;
+  border-radius: 14px;
+  padding: 0.95rem 1rem 1.05rem;
+  display: grid;
+  gap: 0.85rem;
+}
+
+.admin-option-block-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.admin-option-block-head label {
+  display: block;
+  margin: 0 0 0.2rem;
+  font-weight: 800;
+  font-size: 0.92rem;
+  color: var(--admin-ink);
+}
+
+.admin-option-block-head .muted {
+  margin: 0;
+  font-size: 0.8rem;
+  max-width: 42ch;
+}
+
+.admin-option-block-head .muted strong {
+  color: var(--admin-ink);
+}
+
+.admin-option-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.admin-option-clear {
+  border: 1px solid var(--admin-line);
+  background: #faf6f7;
+  color: var(--admin-ink);
+  border-radius: 999px;
+  padding: 0.35rem 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.admin-option-clear:hover {
+  border-color: var(--admin-blush);
+  color: var(--admin-blush);
+}
+
+.admin-size-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(64px, 1fr));
+  gap: 0.45rem;
+}
+
+.admin-size-chip {
+  min-height: 42px;
+  border: 1px solid var(--admin-line);
+  background: #faf6f7;
+  color: var(--admin-ink);
+  border-radius: 10px;
+  font-size: 0.88rem;
+  font-weight: 750;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.admin-size-chip:hover {
+  border-color: #d4a5a5;
+}
+
+.admin-size-chip.is-on {
+  background: var(--admin-ink);
+  border-color: var(--admin-ink);
+  color: #fff;
+}
+
+.admin-ship-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 0.55rem;
+}
+
+.admin-ship-card {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 0.55rem;
+  text-align: left;
+  min-height: 58px;
+  padding: 0.55rem 0.7rem;
+  border: 1px solid var(--admin-line);
+  background: #faf6f7;
+  border-radius: 12px;
+  cursor: pointer;
+  color: var(--admin-ink);
+  transition: background 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.admin-ship-card:hover {
+  border-color: #d4a5a5;
+  box-shadow: 0 4px 14px rgba(28, 20, 24, 0.06);
+}
+
+.admin-ship-card.is-on {
+  background: #fff;
+  border-color: var(--admin-blush);
+  box-shadow: inset 0 0 0 1px rgba(183, 110, 121, 0.35);
+}
+
+.admin-ship-flag {
+  font-size: 1.35rem;
+  line-height: 1;
+}
+
+.admin-ship-meta {
+  display: grid;
+  gap: 0.1rem;
+  min-width: 0;
+}
+
+.admin-ship-meta strong {
+  font-size: 0.86rem;
+  font-weight: 750;
+  line-height: 1.2;
+}
+
+.admin-ship-meta small {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--admin-muted);
+}
+
+.admin-ship-check {
+  width: 1.25rem;
+  height: 1.25rem;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: #fff;
+  background: transparent;
+}
+
+.admin-ship-card.is-on .admin-ship-check {
+  background: var(--admin-blush);
 }
 
 .admin-photo-drop {

@@ -740,34 +740,40 @@ export function AdminProductsPage() {
                 />
               </div>
               <div className="field" style={{ gridColumn: '1 / -1' }}>
-                <label>Available sizes (select all that apply)</label>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, paddingTop: 8 }}>
-                  {(editing.kind === 'apparel'
-                    ? [...APPAREL_SIZE_OPTIONS]
-                    : editing.category.toLowerCase().includes('shoe')
-                      ? [...SHOE_SIZE_OPTIONS]
-                      : [...ACCESSORY_SIZE_OPTIONS, ...SHOE_SIZE_OPTIONS]
-                  ).map((opt) => {
-                    const checked = (editing.sizes || []).includes(opt);
-                    return (
-                      <label
-                        key={opt}
-                        style={{
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: 6,
-                          border: '1px solid var(--line, #e8dfe1)',
-                          padding: '6px 10px',
-                          background: checked ? 'var(--blush-soft, #f3e6e6)' : '#fff',
-                          cursor: 'pointer',
-                          fontSize: 13,
-                          fontWeight: 600,
-                        }}
+                <div className="admin-option-block">
+                  <div className="admin-option-block-head">
+                    <div>
+                      <label>Available sizes</label>
+                      <p className="muted">
+                        Tap every size this piece ships in. Selected:{' '}
+                        <strong>{(editing.sizes || []).length || 0}</strong>
+                      </p>
+                    </div>
+                    {(editing.sizes || []).length > 0 ? (
+                      <button
+                        type="button"
+                        className="admin-option-clear"
+                        onClick={() => setEditing({ ...editing, sizes: [], size: '' })}
                       >
-                        <input
-                          type="checkbox"
-                          checked={checked}
-                          onChange={() => {
+                        Clear sizes
+                      </button>
+                    ) : null}
+                  </div>
+                  <div className="admin-size-grid" role="group" aria-label="Available sizes">
+                    {(editing.kind === 'apparel'
+                      ? [...APPAREL_SIZE_OPTIONS]
+                      : editing.category.toLowerCase().includes('shoe')
+                        ? [...SHOE_SIZE_OPTIONS]
+                        : [...ACCESSORY_SIZE_OPTIONS, ...SHOE_SIZE_OPTIONS]
+                    ).map((opt) => {
+                      const checked = (editing.sizes || []).includes(opt);
+                      return (
+                        <button
+                          key={opt}
+                          type="button"
+                          className={`admin-size-chip${checked ? ' is-on' : ''}`}
+                          aria-pressed={checked}
+                          onClick={() => {
                             const current = editing.sizes || [];
                             const next = checked
                               ? current.filter((s) => s !== opt)
@@ -778,11 +784,12 @@ export function AdminProductsPage() {
                               size: next.join(', '),
                             });
                           }}
-                        />
-                        {opt}
-                      </label>
-                    );
-                  })}
+                        >
+                          {opt}
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
               </div>
               <div className="field">
@@ -794,49 +801,77 @@ export function AdminProductsPage() {
                 />
               </div>
               <div className="field" style={{ gridColumn: '1 / -1' }}>
-                <label>Ships to (countries)</label>
-                <p className="muted" style={{ margin: '0 0 8px', fontSize: 12 }}>
-                  Like Walmart — list countries, not cities. Customers across East Africa see
-                  availability for their market.
-                </p>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
-                  {EAST_AFRICA_MARKETS.map((m) => {
-                    const selected = parseShipToCodes(editing.location);
-                    const checked = selected.includes(m.code);
-                    return (
-                      <label
-                        key={m.code}
-                        style={{
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: 6,
-                          border: '1px solid var(--line, #e8dfe1)',
-                          padding: '6px 10px',
-                          background: checked ? 'var(--blush-soft, #f3e6e6)' : '#fff',
-                          cursor: 'pointer',
-                          fontSize: 13,
-                          fontWeight: 600,
-                        }}
+                <div className="admin-option-block">
+                  <div className="admin-option-block-head">
+                    <div>
+                      <label>Ships to</label>
+                      <p className="muted">
+                        Choose East Africa markets this item can reach — countries only, not cities.
+                      </p>
+                    </div>
+                    <div className="admin-option-actions">
+                      <button
+                        type="button"
+                        className="admin-option-clear"
+                        onClick={() =>
+                          setEditing({
+                            ...editing,
+                            location: encodeShipToCodes(DEFAULT_SHIP_TO_CODES),
+                          })
+                        }
                       >
-                        <input
-                          type="checkbox"
-                          checked={checked}
-                          onChange={() => {
+                        Select all
+                      </button>
+                      <button
+                        type="button"
+                        className="admin-option-clear"
+                        onClick={() =>
+                          setEditing({
+                            ...editing,
+                            location: encodeShipToCodes([DEFAULT_SHIP_TO_CODES[0]]),
+                          })
+                        }
+                      >
+                        Uganda only
+                      </button>
+                    </div>
+                  </div>
+                  <div className="admin-ship-grid" role="group" aria-label="Ships to countries">
+                    {EAST_AFRICA_MARKETS.map((m) => {
+                      const selected = parseShipToCodes(editing.location);
+                      const checked = selected.includes(m.code);
+                      return (
+                        <button
+                          key={m.code}
+                          type="button"
+                          className={`admin-ship-card${checked ? ' is-on' : ''}`}
+                          aria-pressed={checked}
+                          onClick={() => {
                             const next = checked
                               ? selected.filter((c) => c !== m.code)
                               : [...selected, m.code];
                             setEditing({
                               ...editing,
                               location: encodeShipToCodes(
-                                next.length ? next : DEFAULT_SHIP_TO_CODES,
+                                next.length ? next : [DEFAULT_SHIP_TO_CODES[0]],
                               ),
                             });
                           }}
-                        />
-                        {m.flag} {m.name}
-                      </label>
-                    );
-                  })}
+                        >
+                          <span className="admin-ship-flag" aria-hidden>
+                            {m.flag}
+                          </span>
+                          <span className="admin-ship-meta">
+                            <strong>{m.name}</strong>
+                            <small>{m.code}</small>
+                          </span>
+                          <span className="admin-ship-check" aria-hidden>
+                            {checked ? '✓' : ''}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
               </div>
               <div className="field">

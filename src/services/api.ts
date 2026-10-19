@@ -939,6 +939,10 @@ export const marketApi = {
     return mapOrder(order);
   },
 
+  async deleteOrder(token: string, id: string) {
+    await request(`/market/admin/orders/${id}`, { method: 'DELETE', token });
+  },
+
   async upsertUser(token: string, user: User, isNew: boolean) {
     if (isNew) {
       const created = await request<ApiAdminUser>('/market/admin/users', {
