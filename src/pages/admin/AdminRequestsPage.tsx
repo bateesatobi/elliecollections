@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { AdminRowMenu } from '../../components/admin/AdminChrome';
 import { getAdminToken, marketApi } from '../../services/api';
+import { processLabel } from '../../utils/processCatalog';
+import { runProcess } from '../../utils/processProgress';
 import { swalError, swalSuccess } from '../../utils/swal';
 import type { PieceRequest, PieceRequestStatus } from '../../types';
 
@@ -40,9 +42,20 @@ export function AdminRequestsPage() {
     const token = getAdminToken();
     if (!token) return;
     try {
-      await marketApi.adminUpdateRequest(token, row.id, status);
+      await runProcess(
+        {
+          kind: 'update',
+          title: processLabel('admin.request.status', 'Updating request…'),
+          percent: 30,
+        },
+        async (set) => {
+          set(55, `Marking as ${status}…`);
+          await marketApi.adminUpdateRequest(token, row.id, status);
+          set(85, 'Refreshing…');
+          await refresh();
+        },
+      );
       await swalSuccess('Updated', `Marked as ${status}.`);
-      await refresh();
     } catch (e) {
       await swalError('Update failed', e instanceof Error ? e.message : 'Could not update');
     }

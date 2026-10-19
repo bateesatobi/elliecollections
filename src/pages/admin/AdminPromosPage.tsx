@@ -1,6 +1,8 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { AdminDrawer, AdminRowMenu } from '../../components/admin/AdminChrome';
 import { getAdminToken, marketApi, type Promo } from '../../services/api';
+import { processLabel } from '../../utils/processCatalog';
+import { runProcess } from '../../utils/processProgress';
 import { swalConfirm, swalError, swalSuccess } from '../../utils/swal';
 
 type PromoForm = Omit<Promo, 'id'> & { id?: string };
@@ -46,9 +48,20 @@ export function AdminPromosPage() {
     if (!token) return;
     const isNew = !editing.id;
     try {
-      await marketApi.upsertPromo(token, editing, isNew);
-      setEditing(null);
-      await refresh();
+      await runProcess(
+        {
+          kind: 'submit',
+          title: processLabel('admin.promo.save', 'Saving promo…'),
+          percent: 25,
+        },
+        async (set) => {
+          set(50, isNew ? 'Creating promo…' : 'Updating promo…');
+          await marketApi.upsertPromo(token, editing, isNew);
+          set(85, 'Refreshing…');
+          setEditing(null);
+          await refresh();
+        },
+      );
       await swalSuccess(isNew ? 'Promo created' : 'Promo updated', editing.title);
     } catch (err) {
       await swalError('Save failed', err instanceof Error ? err.message : 'Could not save promo');
@@ -119,8 +132,19 @@ export function AdminPromosPage() {
                             if (!ok) return;
                             const token = getAdminToken();
                             if (!token) return;
-                            await marketApi.deletePromo(token, p.id);
-                            await refresh();
+                            await runProcess(
+                              {
+                                kind: 'delete',
+                                title: processLabel('admin.promo.delete', 'Deleting promo…'),
+                                percent: 30,
+                              },
+                              async (set) => {
+                                set(55, 'Removing promo…');
+                                await marketApi.deletePromo(token, p.id);
+                                set(85, 'Refreshing…');
+                                await refresh();
+                              },
+                            );
                           },
                         },
                       ]}

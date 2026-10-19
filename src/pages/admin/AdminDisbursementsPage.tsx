@@ -3,6 +3,8 @@ import { AdminModal, AdminRowMenu } from '../../components/admin/AdminChrome';
 import { AdminPagination, useAdminPagination } from '../../components/admin/AdminPagination';
 import { formatUgx } from '../../store/MarketStore';
 import { getAdminToken, marketApi } from '../../services/api';
+import { processLabel } from '../../utils/processCatalog';
+import { runProcess } from '../../utils/processProgress';
 
 type PayableBatch = {
   seller_id: string;
@@ -123,16 +125,27 @@ export function AdminDisbursementsPage() {
     setBusy(true);
     setError(null);
     try {
-      await marketApi.createDisbursements(
-        token,
-        selectedBatches.map((b) => ({
-          seller_id: b.seller_id,
-          order_ids: b.order_ids,
-          destination: destinations[b.seller_id].trim(),
-          method: methods[b.seller_id] || 'mtn',
-        })),
+      await runProcess(
+        {
+          kind: 'submit',
+          title: processLabel('admin.disburse.create', 'Creating disbursements…'),
+          percent: 25,
+        },
+        async (set) => {
+          set(50, 'Creating payout batches…');
+          await marketApi.createDisbursements(
+            token,
+            selectedBatches.map((b) => ({
+              seller_id: b.seller_id,
+              order_ids: b.order_ids,
+              destination: destinations[b.seller_id].trim(),
+              method: methods[b.seller_id] || 'mtn',
+            })),
+          );
+          set(85, 'Refreshing…');
+          await load();
+        },
       );
-      await load();
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Could not create disbursements.');
     } finally {
@@ -146,9 +159,20 @@ export function AdminDisbursementsPage() {
     setBusy(true);
     setError(null);
     try {
-      await marketApi.payDisbursement(token, id);
-      await load();
-      setViewing(null);
+      await runProcess(
+        {
+          kind: 'pay',
+          title: processLabel('admin.disburse.pay', 'Paying disbursement…'),
+          percent: 25,
+        },
+        async (set) => {
+          set(50, 'Sending payout…');
+          await marketApi.payDisbursement(token, id);
+          set(85, 'Refreshing…');
+          await load();
+          setViewing(null);
+        },
+      );
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Payout failed.');
     } finally {

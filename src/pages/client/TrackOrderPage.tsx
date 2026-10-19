@@ -9,6 +9,8 @@ import { marketApi } from '../../services/api';
 import { useMarket } from '../../store/MarketStore';
 import { useCurrency } from '../../store/CurrencyStore';
 import { validateMobilePhone } from '../../utils/phone';
+import { processLabel } from '../../utils/processCatalog';
+import { runProcess } from '../../utils/processProgress';
 import type { Order, OrderStatus } from '../../types';
 
 const CURRENT_STATUSES: OrderStatus[] = ['pending', 'paid', 'processing', 'shipped'];
@@ -92,15 +94,25 @@ export function TrackOrderPage() {
     setGuestOrders([]);
     setLookedUp(false);
     try {
-      const found = await marketApi.lookupOrdersByPhone(phoneValue);
-      setGuestOrders(found);
-      setLookedUp(true);
-      setMode('lookup');
-      if (preferOrderId && found.some((o) => o.id === preferOrderId)) {
-        setSelectedId(preferOrderId);
-      } else {
-        setSelectedId(null);
-      }
+      await runProcess(
+        {
+          kind: 'search',
+          title: processLabel('client.track', 'Looking up orders…'),
+          percent: 25,
+        },
+        async (set) => {
+          set(55, 'Searching by phone…');
+          const found = await marketApi.lookupOrdersByPhone(phoneValue);
+          setGuestOrders(found);
+          setLookedUp(true);
+          setMode('lookup');
+          if (preferOrderId && found.some((o) => o.id === preferOrderId)) {
+            setSelectedId(preferOrderId);
+          } else {
+            setSelectedId(null);
+          }
+        },
+      );
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Could not find orders for that phone.');
       setGuestOrders([]);

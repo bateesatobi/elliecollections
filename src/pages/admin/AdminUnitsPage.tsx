@@ -3,6 +3,8 @@ import { AdminDrawer, AdminRowMenu } from '../../components/admin/AdminChrome';
 import { AdminPagination, useAdminPagination } from '../../components/admin/AdminPagination';
 import { getAdminToken, marketApi } from '../../services/api';
 import type { MarketUnit } from '../../types';
+import { processLabel } from '../../utils/processCatalog';
+import { runProcess } from '../../utils/processProgress';
 import { swalConfirm, swalError, swalSuccess } from '../../utils/swal';
 
 const empty = (): Omit<MarketUnit, 'createdAt' | 'updatedAt'> => ({
@@ -50,10 +52,21 @@ export function AdminUnitsPage() {
     if (!token) return;
     const isNew = !items.some((u) => u.id === editing.id);
     try {
-      await marketApi.upsertUnit(token, editing, isNew);
       const name = editing.name;
-      setEditing(null);
-      await load();
+      await runProcess(
+        {
+          kind: 'submit',
+          title: processLabel('admin.unit.save', 'Saving unit…'),
+          percent: 25,
+        },
+        async (set) => {
+          set(50, isNew ? 'Adding unit…' : 'Updating unit…');
+          await marketApi.upsertUnit(token, editing, isNew);
+          setEditing(null);
+          set(85, 'Refreshing…');
+          await load();
+        },
+      );
       await swalSuccess(
         isNew ? 'Unit added' : 'Unit updated',
         isNew ? `“${name}” was added.` : `“${name}” was saved.`,
@@ -72,8 +85,19 @@ export function AdminUnitsPage() {
     const token = getAdminToken();
     if (!token) return;
     try {
-      await marketApi.deleteUnit(token, id);
-      await load();
+      await runProcess(
+        {
+          kind: 'delete',
+          title: processLabel('admin.unit.delete', 'Deleting unit…'),
+          percent: 30,
+        },
+        async (set) => {
+          set(55, 'Removing unit…');
+          await marketApi.deleteUnit(token, id);
+          set(85, 'Refreshing…');
+          await load();
+        },
+      );
       await swalSuccess('Unit deleted');
     } catch (err) {
       await swalError(

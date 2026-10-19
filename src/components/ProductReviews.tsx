@@ -4,6 +4,8 @@ import { Stars } from './ProductCard';
 import { getCustomerToken, marketApi } from '../services/api';
 import { useMarket } from '../store/MarketStore';
 import type { ProductReview } from '../types';
+import { processLabel } from '../utils/processCatalog';
+import { runProcess } from '../utils/processProgress';
 
 type Props = { productId: string };
 
@@ -59,19 +61,30 @@ export function ProductReviews({ productId }: Props) {
     setError(null);
     setSuccess(null);
     try {
-      await marketApi.createReview(token, productId, {
-        rating,
-        title: title.trim() || undefined,
-        body: body.trim(),
-      });
-      setTitle('');
-      setBody('');
-      setRating(5);
-      setPendingMine(true);
-      setSuccess(
-        'Thanks! Your review was submitted and will appear after admin approval.',
+      await runProcess(
+        {
+          kind: 'submit',
+          title: processLabel('client.review', 'Submitting review…'),
+          percent: 25,
+        },
+        async (set) => {
+          set(50, 'Sending for approval…');
+          await marketApi.createReview(token, productId, {
+            rating,
+            title: title.trim() || undefined,
+            body: body.trim(),
+          });
+          set(85, 'Refreshing reviews…');
+          setTitle('');
+          setBody('');
+          setRating(5);
+          setPendingMine(true);
+          setSuccess(
+            'Thanks! Your review was submitted and will appear after admin approval.',
+          );
+          await refresh();
+        },
       );
-      await refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Could not post review.');
     } finally {

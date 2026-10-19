@@ -13,6 +13,8 @@ import { useCurrency } from '../../store/CurrencyStore';
 import type { FulfillmentMode } from '../../types';
 import { SHOP, orderConfirmWhatsAppMessage, whatsappHref } from '../../utils/shopContact';
 import { validateMobilePhone } from '../../utils/phone';
+import { processLabel } from '../../utils/processCatalog';
+import { runProcess } from '../../utils/processProgress';
 
 function isoFromCurrency(code: string) {
   const map: Record<string, string> = {
@@ -204,18 +206,28 @@ export function CheckoutPage() {
     setPaying(true);
 
     try {
-      const phone = momoPhone.trim() || recipient.phone.trim();
-      const charged = await chargeViaPesapal({
-        amountUgx: total,
-        method: payMethod,
-        phone,
-        cardName: card.name,
-        cardNumber: card.number,
-        cardExpiry: card.expiry,
-        cardCvv: card.cvv,
-        customerEmail: customer?.email || '',
-        description: `Elliecollections order (${cart.length} lines)`,
-      });
+      const charged = await runProcess(
+        {
+          kind: 'pay',
+          title: processLabel('client.checkout.pay', 'Processing payment…'),
+          percent: 20,
+        },
+        async (set) => {
+          set(40, 'Contacting Pesapal…');
+          const phone = momoPhone.trim() || recipient.phone.trim();
+          return chargeViaPesapal({
+            amountUgx: total,
+            method: payMethod,
+            phone,
+            cardName: card.name,
+            cardNumber: card.number,
+            cardExpiry: card.expiry,
+            cardCvv: card.cvv,
+            customerEmail: customer?.email || '',
+            description: `Elliecollections order (${cart.length} lines)`,
+          });
+        },
+      );
 
       if (charged.ok === false) {
         setOrderError(charged.error);

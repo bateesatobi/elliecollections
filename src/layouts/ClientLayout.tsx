@@ -7,6 +7,8 @@ import { captureReferralFromUrl } from '../utils/referral';
 import { loadWishlist } from '../utils/wishlist';
 import { SHOP, whatsappHref } from '../utils/shopContact';
 import { EAST_AFRICA_MARKETS } from '../utils/markets';
+import { processLabel } from '../utils/processCatalog';
+import { runProcess } from '../utils/processProgress';
 import './client.css';
 
 export function ClientLayout() {
@@ -40,11 +42,23 @@ export function ClientLayout() {
 
   const onSearch = (e: FormEvent) => {
     e.preventDefault();
-    const next = new URLSearchParams();
-    const kind = params.get('kind');
-    if (kind) next.set('kind', kind);
-    if (query.trim()) next.set('q', query.trim());
-    navigate(`/shop?${next.toString()}`);
+    void runProcess(
+      {
+        kind: 'search',
+        title: processLabel('client.shop.search', 'Searching catalogue…'),
+        mode: 'bar',
+        percent: 30,
+      },
+      async (set) => {
+        set(70, 'Filtering pieces…');
+        const next = new URLSearchParams();
+        const kind = params.get('kind');
+        if (kind) next.set('kind', kind);
+        if (query.trim()) next.set('q', query.trim());
+        navigate(`/shop?${next.toString()}`);
+        await new Promise((r) => setTimeout(r, 180));
+      },
+    );
   };
 
   return (

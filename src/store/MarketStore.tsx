@@ -24,6 +24,8 @@ import type {
   User,
 } from '../types';
 import { effectiveMinOrderQty, unitPriceForQty } from '../utils/pricing';
+import { processLabel } from '../utils/processCatalog';
+import { runProcess } from '../utils/processProgress';
 
 const CART_KEY = 'ellie_market_cart_v1';
 
@@ -262,36 +264,52 @@ export function MarketProvider({ children }: { children: ReactNode }) {
   const clearCart = useCallback(() => setCart([]), []);
 
   const loginCustomer = useCallback(async (emailOrPhone: string, password?: string) => {
-    try {
-      const token = await marketApi.login(emailOrPhone, password);
-      const me = await marketApi.me(token);
-      if (me.role === 'admin') return 'Use the admin login for admin accounts.';
-      setCustomerToken(token);
-      setCustomer(me);
-      await refreshCustomerOrders(token);
-      return null;
-    } catch (e) {
-      return e instanceof Error ? e.message : 'Login failed.';
-    }
+    return runProcess(
+      { kind: 'auth', title: processLabel('client.signin', 'Signing in…'), percent: 15 },
+      async (set) => {
+        try {
+          set(25, 'Checking credentials…');
+          const token = await marketApi.login(emailOrPhone, password);
+          set(55, 'Loading your account…');
+          const me = await marketApi.me(token);
+          if (me.role === 'admin') return 'Use the admin login for admin accounts.';
+          setCustomerToken(token);
+          setCustomer(me);
+          set(80, 'Loading orders…');
+          await refreshCustomerOrders(token);
+          return null;
+        } catch (e) {
+          return e instanceof Error ? e.message : 'Login failed.';
+        }
+      },
+    );
   }, [refreshCustomerOrders]);
 
   const continueWithPhone = useCallback(
     async (phone: string, name?: string) => {
       if (!phone.trim()) return 'Enter your mobile number.';
-      try {
-        const { getStoredReferral, clearStoredReferral } = await import('../utils/referral');
-        const referredBy = getStoredReferral() || undefined;
-        const token = await marketApi.phoneAuth(phone, name, referredBy);
-        const me = await marketApi.me(token);
-        if (me.role === 'admin') return 'Use the admin login for admin accounts.';
-        setCustomerToken(token);
-        setCustomer(me);
-        await refreshCustomerOrders(token);
-        if (referredBy) clearStoredReferral();
-        return null;
-      } catch (e) {
-        return e instanceof Error ? e.message : 'Could not continue with this number.';
-      }
+      return runProcess(
+        { kind: 'auth', title: processLabel('client.signin', 'Signing in…'), percent: 15 },
+        async (set) => {
+          try {
+            const { getStoredReferral, clearStoredReferral } = await import('../utils/referral');
+            const referredBy = getStoredReferral() || undefined;
+            set(30, 'Verifying phone…');
+            const token = await marketApi.phoneAuth(phone, name, referredBy);
+            set(60, 'Loading your account…');
+            const me = await marketApi.me(token);
+            if (me.role === 'admin') return 'Use the admin login for admin accounts.';
+            setCustomerToken(token);
+            setCustomer(me);
+            set(85, 'Loading orders…');
+            await refreshCustomerOrders(token);
+            if (referredBy) clearStoredReferral();
+            return null;
+          } catch (e) {
+            return e instanceof Error ? e.message : 'Could not continue with this number.';
+          }
+        },
+      );
     },
     [refreshCustomerOrders],
   );
@@ -388,42 +406,54 @@ export function MarketProvider({ children }: { children: ReactNode }) {
       const customerPhone = (payload.customerPhone || customer?.phone || recipientPhone).trim();
       const customerEmail = (payload.customerEmail || customer?.email || '').trim();
 
-      try {
-        const items = cart.map((l) => ({
-          product_id: l.productId,
-          quantity: l.quantity,
-          ...(l.size ? { size: l.size } : {}),
-        }));
-        const fulfillmentMode = payload.fulfillmentMode || 'delivery';
-        const quote = await marketApi.quote(token, items, {
-          fulfillment_mode: fulfillmentMode,
-        });
-        const order = await marketApi.createOrder(token, {
-          items,
-          delivery_address: payload.deliveryAddress.trim(),
-          district: payload.district.trim(),
-          payment_method: payload.paymentMethod,
-          payment_ref: payload.paymentRef.trim(),
-          quote_id: quote.quote_id,
-          payment_tracking_id: payload.paymentTrackingId,
-          merchant_reference: payload.merchantReference,
-          customer_name: customerName,
-          customer_email: customerEmail || undefined,
-          customer_phone: customerPhone,
-          recipient_name: recipientName,
-          recipient_phone: recipientPhone,
-          fulfillment_mode: fulfillmentMode,
-        });
-        setCart([]);
-        await refreshCatalog();
-        if (token) await refreshCustomerOrders(token);
-        return { ok: true as const, order };
-      } catch (e) {
-        return {
-          ok: false as const,
-          error: e instanceof Error ? e.message : 'Could not place order.',
-        };
-      }
+      return runProcess(
+        {
+          kind: 'submit',
+          title: processLabel('client.checkout.place', 'Placing order…'),
+          percent: 20,
+        },
+        async (set) => {
+          try {
+            const items = cart.map((l) => ({
+              product_id: l.productId,
+              quantity: l.quantity,
+              ...(l.size ? { size: l.size } : {}),
+            }));
+            const fulfillmentMode = payload.fulfillmentMode || 'delivery';
+            set(35, 'Getting delivery quote…');
+            const quote = await marketApi.quote(token, items, {
+              fulfillment_mode: fulfillmentMode,
+            });
+            set(65, 'Creating your order…');
+            const order = await marketApi.createOrder(token, {
+              items,
+              delivery_address: payload.deliveryAddress.trim(),
+              district: payload.district.trim(),
+              payment_method: payload.paymentMethod,
+              payment_ref: payload.paymentRef.trim(),
+              quote_id: quote.quote_id,
+              payment_tracking_id: payload.paymentTrackingId,
+              merchant_reference: payload.merchantReference,
+              customer_name: customerName,
+              customer_email: customerEmail || undefined,
+              customer_phone: customerPhone,
+              recipient_name: recipientName,
+              recipient_phone: recipientPhone,
+              fulfillment_mode: fulfillmentMode,
+            });
+            setCart([]);
+            set(85, 'Refreshing catalogue…');
+            await refreshCatalog();
+            if (token) await refreshCustomerOrders(token);
+            return { ok: true as const, order };
+          } catch (e) {
+            return {
+              ok: false as const,
+              error: e instanceof Error ? e.message : 'Could not place order.',
+            };
+          }
+        },
+      );
     },
     [cart, customer, refreshCatalog, refreshCustomerOrders],
   );
@@ -432,14 +462,25 @@ export function MarketProvider({ children }: { children: ReactNode }) {
     async (product: Omit<Product, 'createdAt' | 'updatedAt'> & { createdAt?: string }) => {
       const token = getAdminToken();
       if (!token) return 'Admin login required.';
-      try {
-        const isNew = !products.some((p) => p.id === product.id);
-        await marketApi.upsertProduct(token, product, isNew || product.id.startsWith('new_'));
-        await refreshAdminData(token);
-        return null;
-      } catch (e) {
-        return e instanceof Error ? e.message : 'Save failed.';
-      }
+      return runProcess(
+        {
+          kind: 'submit',
+          title: processLabel('admin.product.save', 'Saving product…'),
+          percent: 20,
+        },
+        async (set) => {
+          try {
+            const isNew = !products.some((p) => p.id === product.id);
+            set(40, isNew ? 'Creating product…' : 'Updating product…');
+            await marketApi.upsertProduct(token, product, isNew || product.id.startsWith('new_'));
+            set(75, 'Refreshing catalogue…');
+            await refreshAdminData(token);
+            return null;
+          } catch (e) {
+            return e instanceof Error ? e.message : 'Save failed.';
+          }
+        },
+      );
     },
     [products, refreshAdminData],
   );
@@ -448,14 +489,25 @@ export function MarketProvider({ children }: { children: ReactNode }) {
     async (id: string) => {
       const token = getAdminToken();
       if (!token) return 'Admin login required.';
-      try {
-        await marketApi.deleteProduct(token, id);
-        setCart((prev) => prev.filter((c) => c.productId !== id));
-        await refreshAdminData(token);
-        return null;
-      } catch (e) {
-        return e instanceof Error ? e.message : 'Delete failed.';
-      }
+      return runProcess(
+        {
+          kind: 'delete',
+          title: processLabel('admin.product.delete', 'Deleting product…'),
+          percent: 25,
+        },
+        async (set) => {
+          try {
+            set(45, 'Removing product…');
+            await marketApi.deleteProduct(token, id);
+            setCart((prev) => prev.filter((c) => c.productId !== id));
+            set(80, 'Refreshing catalogue…');
+            await refreshAdminData(token);
+            return null;
+          } catch (e) {
+            return e instanceof Error ? e.message : 'Delete failed.';
+          }
+        },
+      );
     },
     [refreshAdminData],
   );
@@ -468,13 +520,24 @@ export function MarketProvider({ children }: { children: ReactNode }) {
     ) => {
       const token = getAdminToken();
       if (!token) return 'Admin login required.';
-      try {
-        await marketApi.updateOrderStatus(token, id, status, opts);
-        await refreshAdminData(token);
-        return null;
-      } catch (e) {
-        return e instanceof Error ? e.message : 'Update failed.';
-      }
+      return runProcess(
+        {
+          kind: 'update',
+          title: processLabel('admin.order.status', 'Updating order…'),
+          percent: 25,
+        },
+        async (set) => {
+          try {
+            set(50, `Setting status to ${status}…`);
+            await marketApi.updateOrderStatus(token, id, status, opts);
+            set(80, 'Refreshing orders…');
+            await refreshAdminData(token);
+            return null;
+          } catch (e) {
+            return e instanceof Error ? e.message : 'Update failed.';
+          }
+        },
+      );
     },
     [refreshAdminData],
   );
@@ -483,13 +546,24 @@ export function MarketProvider({ children }: { children: ReactNode }) {
     async (id: string, amountUgx: number, note: string) => {
       const token = getAdminToken();
       if (!token) return 'Admin login required.';
-      try {
-        await marketApi.refundOrder(token, id, amountUgx, note);
-        await refreshAdminData(token);
-        return null;
-      } catch (e) {
-        return e instanceof Error ? e.message : 'Refund failed.';
-      }
+      return runProcess(
+        {
+          kind: 'update',
+          title: processLabel('admin.order.refund', 'Processing refund…'),
+          percent: 25,
+        },
+        async (set) => {
+          try {
+            set(50, 'Submitting refund…');
+            await marketApi.refundOrder(token, id, amountUgx, note);
+            set(80, 'Refreshing orders…');
+            await refreshAdminData(token);
+            return null;
+          } catch (e) {
+            return e instanceof Error ? e.message : 'Refund failed.';
+          }
+        },
+      );
     },
     [refreshAdminData],
   );
@@ -498,13 +572,24 @@ export function MarketProvider({ children }: { children: ReactNode }) {
     async (id: string) => {
       const token = getAdminToken();
       if (!token) return 'Admin login required.';
-      try {
-        await marketApi.deleteOrder(token, id);
-        await refreshAdminData(token);
-        return null;
-      } catch (e) {
-        return e instanceof Error ? e.message : 'Delete failed.';
-      }
+      return runProcess(
+        {
+          kind: 'delete',
+          title: processLabel('admin.order.delete', 'Deleting order…'),
+          percent: 25,
+        },
+        async (set) => {
+          try {
+            set(45, 'Removing order…');
+            await marketApi.deleteOrder(token, id);
+            set(80, 'Refreshing orders…');
+            await refreshAdminData(token);
+            return null;
+          } catch (e) {
+            return e instanceof Error ? e.message : 'Delete failed.';
+          }
+        },
+      );
     },
     [refreshAdminData],
   );
@@ -513,14 +598,25 @@ export function MarketProvider({ children }: { children: ReactNode }) {
     async (user: User) => {
       const token = getAdminToken();
       if (!token) return 'Admin login required.';
-      try {
-        const isNew = !users.some((u) => u.id === user.id) || user.id.startsWith('new_');
-        await marketApi.upsertUser(token, user, isNew);
-        await refreshAdminData(token);
-        return null;
-      } catch (e) {
-        return e instanceof Error ? e.message : 'Save failed.';
-      }
+      return runProcess(
+        {
+          kind: 'submit',
+          title: processLabel('admin.user.save', 'Saving user…'),
+          percent: 25,
+        },
+        async (set) => {
+          try {
+            const isNew = !users.some((u) => u.id === user.id) || user.id.startsWith('new_');
+            set(45, isNew ? 'Creating user…' : 'Updating user…');
+            await marketApi.upsertUser(token, user, isNew);
+            set(80, 'Refreshing users…');
+            await refreshAdminData(token);
+            return null;
+          } catch (e) {
+            return e instanceof Error ? e.message : 'Save failed.';
+          }
+        },
+      );
     },
     [refreshAdminData, users],
   );
@@ -529,13 +625,24 @@ export function MarketProvider({ children }: { children: ReactNode }) {
     async (id: string) => {
       const token = getAdminToken();
       if (!token) return 'Admin login required.';
-      try {
-        await marketApi.deleteUser(token, id);
-        await refreshAdminData(token);
-        return null;
-      } catch (e) {
-        return e instanceof Error ? e.message : 'Delete failed.';
-      }
+      return runProcess(
+        {
+          kind: 'delete',
+          title: processLabel('admin.user.delete', 'Deleting user…'),
+          percent: 25,
+        },
+        async (set) => {
+          try {
+            set(45, 'Removing user…');
+            await marketApi.deleteUser(token, id);
+            set(80, 'Refreshing users…');
+            await refreshAdminData(token);
+            return null;
+          } catch (e) {
+            return e instanceof Error ? e.message : 'Delete failed.';
+          }
+        },
+      );
     },
     [refreshAdminData],
   );

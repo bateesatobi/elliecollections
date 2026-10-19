@@ -4,6 +4,8 @@ import { AdminRowMenu } from '../../components/admin/AdminChrome';
 import { Stars } from '../../components/ProductCard';
 import { getAdminToken, marketApi } from '../../services/api';
 import { useMarket } from '../../store/MarketStore';
+import { processLabel } from '../../utils/processCatalog';
+import { runProcess } from '../../utils/processProgress';
 import { swalConfirm, swalError, swalSuccess } from '../../utils/swal';
 import type { ProductReview } from '../../types';
 
@@ -52,14 +54,25 @@ export function AdminReviewsPage() {
     const token = getAdminToken();
     if (!token) return;
     try {
-      await marketApi.adminSetReviewVisibility(token, id, visible);
+      await runProcess(
+        {
+          kind: 'update',
+          title: processLabel('admin.review.visibility', 'Updating review…'),
+          percent: 30,
+        },
+        async (set) => {
+          set(55, visible ? 'Publishing…' : 'Hiding…');
+          await marketApi.adminSetReviewVisibility(token, id, visible);
+          set(85, 'Refreshing…');
+          await refresh();
+        },
+      );
       await swalSuccess(
         visible ? 'Published' : 'Hidden',
         visible
           ? 'This review is now visible on the product page.'
           : 'This review is hidden from shoppers.',
       );
-      await refresh();
     } catch (e) {
       await swalError('Update failed', e instanceof Error ? e.message : 'Could not update');
     }
@@ -71,9 +84,20 @@ export function AdminReviewsPage() {
     const token = getAdminToken();
     if (!token) return;
     try {
-      await marketApi.adminDeleteReview(token, id);
+      await runProcess(
+        {
+          kind: 'delete',
+          title: processLabel('admin.review.delete', 'Deleting review…'),
+          percent: 30,
+        },
+        async (set) => {
+          set(55, 'Removing review…');
+          await marketApi.adminDeleteReview(token, id);
+          set(85, 'Refreshing…');
+          await refresh();
+        },
+      );
       await swalSuccess('Deleted', 'Review removed.');
-      await refresh();
     } catch (e) {
       await swalError('Delete failed', e instanceof Error ? e.message : 'Could not delete');
     }

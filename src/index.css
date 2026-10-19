@@ -321,20 +321,94 @@ img {
   border-color: transparent;
 }
 
+/* —— Global process progress —— */
+.ec-process-host {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 10000;
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.ec-process-host-track {
+  height: 3px;
+  width: 100%;
+  background: rgba(28, 20, 24, 0.08);
+  overflow: hidden;
+}
+
+.ec-process-host-fill {
+  height: 100%;
+  width: 12%;
+  background: linear-gradient(90deg, var(--ink, #1c1418), var(--blush-deep, #c45c7a));
+  transition: width 0.28s ease;
+  border-radius: 0 2px 2px 0;
+}
+
+.ec-process-host.is-indeterminate .ec-process-host-fill {
+  width: 35%;
+  animation: ec-process-slide 1.1s ease-in-out infinite;
+}
+
+.ec-process-host-label {
+  align-self: center;
+  margin-top: 6px;
+  padding: 0.2rem 0.65rem;
+  font-size: 0.68rem;
+  letter-spacing: 0.02em;
+  color: var(--ink, #1c1418);
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid var(--line, #e8e0e4);
+  border-radius: 999px;
+  box-shadow: 0 4px 14px rgba(28, 20, 24, 0.08);
+}
+
+.ec-process-track,
 .swal-login-track {
   width: 100%;
   height: 10px;
   border-radius: 999px;
-  background: var(--blush-soft);
+  background: var(--blush-soft, #f7e8ee);
   overflow: hidden;
 }
 
+.ec-process-fill,
 .swal-login-bar {
   height: 100%;
   width: 0%;
   border-radius: inherit;
-  background: linear-gradient(90deg, var(--ink), var(--blush-deep));
+  background: linear-gradient(90deg, var(--ink, #1c1418), var(--blush-deep, #c45c7a));
   transition: width 0.35s ease;
+}
+
+.ec-process-fill.is-indeterminate {
+  width: 40% !important;
+  animation: ec-process-slide 1.1s ease-in-out infinite;
+}
+
+.ec-process-modal-lead,
+.ec-process-modal-status {
+  margin: 0 0 12px;
+  color: #4a5c4f;
+  font-size: 14px;
+}
+
+.ec-process-modal-status {
+  margin: 12px 0 0;
+  font-size: 13px;
+}
+
+@keyframes ec-process-slide {
+  0% {
+    transform: translateX(-120%);
+  }
+  100% {
+    transform: translateX(320%);
+  }
 }
 
 @keyframes fadeUp {

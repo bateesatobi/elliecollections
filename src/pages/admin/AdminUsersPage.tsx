@@ -4,6 +4,8 @@ import { AdminPagination, useAdminPagination } from '../../components/admin/Admi
 import { formatUgx, useMarket } from '../../store/MarketStore';
 import { getAdminToken, marketApi } from '../../services/api';
 import type { User } from '../../types';
+import { processLabel } from '../../utils/processCatalog';
+import { runProcess } from '../../utils/processProgress';
 import { swalConfirm, swalError, swalSuccess } from '../../utils/swal';
 
 function initials(name: string) {
@@ -59,8 +61,19 @@ export function AdminUsersPage() {
       return;
     }
     try {
-      const fresh = await marketApi.getAdminUser(token, u.id);
-      setViewing(fresh);
+      await runProcess(
+        {
+          kind: 'load',
+          title: processLabel('admin.user.load', 'Loading user…'),
+          mode: 'bar',
+          percent: 30,
+        },
+        async (set) => {
+          set(65, 'Fetching details…');
+          const fresh = await marketApi.getAdminUser(token, u.id);
+          setViewing(fresh);
+        },
+      );
     } catch (err) {
       setViewError(err instanceof Error ? err.message : 'Could not refresh user details');
     } finally {

@@ -4,6 +4,8 @@ import { Camera, ImagePlus, Phone, Sparkles } from 'lucide-react';
 import { Seo } from '../../components/Seo';
 import { getCustomerToken, marketApi } from '../../services/api';
 import { useMarket } from '../../store/MarketStore';
+import { processLabel } from '../../utils/processCatalog';
+import { runProcess } from '../../utils/processProgress';
 import { swalError, swalSuccess } from '../../utils/swal';
 
 const MAX_IMAGE_BYTES = 786_432;
@@ -61,10 +63,20 @@ export function RequestPiecePage() {
     setBusy(true);
     setError(null);
     try {
-      await marketApi.createPieceRequest(token, {
-        description: description.trim(),
-        imageBase64: preview,
-      });
+      await runProcess(
+        {
+          kind: 'submit',
+          title: processLabel('client.request', 'Sending request…'),
+          percent: 25,
+        },
+        async (set) => {
+          set(50, 'Uploading your request…');
+          await marketApi.createPieceRequest(token, {
+            description: description.trim(),
+            imageBase64: preview,
+          });
+        },
+      );
       setSent(true);
       await swalSuccess(
         'Request sent',

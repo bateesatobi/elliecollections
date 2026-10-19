@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Trash2 } from 'lucide-react';
 import { AdminModal, AdminRowMenu } from '../../components/admin/AdminChrome';
 import { AdminPagination, useAdminPagination } from '../../components/admin/AdminPagination';
 import { formatUgx, useMarket } from '../../store/MarketStore';
@@ -95,7 +96,7 @@ export function AdminOrdersPage() {
               <th>Items</th>
               <th>Total</th>
               <th>Status</th>
-              <th style={{ width: 56 }}>Actions</th>
+              <th style={{ width: 160 }}>Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -143,32 +144,44 @@ export function AdminOrdersPage() {
                     </span>
                   </td>
                   <td>
-                    <AdminRowMenu
-                      items={[
-                        { label: 'View', onClick: () => setViewing(o) },
-                        {
-                          label: 'Update status',
-                          onClick: () => openUpdate(o),
-                          disabled: o.status === 'refunded' || deleteBusy,
-                        },
-                        {
-                          label: 'Refund',
-                          tone: 'danger',
-                          disabled: o.status === 'refunded' || deleteBusy,
-                          onClick: () => {
-                            setRefundId(o.id);
-                            setAmount(String(o.totalUgx));
-                            setError(null);
+                    <div className="admin-row-actions">
+                      <button
+                        type="button"
+                        className="btn admin-icon-btn admin-icon-btn-danger"
+                        disabled={deleteBusy}
+                        title="Delete permanently"
+                        onClick={() => void permanentlyDelete(o)}
+                      >
+                        <Trash2 size={14} />
+                        Delete
+                      </button>
+                      <AdminRowMenu
+                        items={[
+                          { label: 'View', onClick: () => setViewing(o) },
+                          {
+                            label: 'Update status',
+                            onClick: () => openUpdate(o),
+                            disabled: o.status === 'refunded' || deleteBusy,
                           },
-                        },
-                        {
-                          label: 'Delete permanently',
-                          tone: 'danger',
-                          disabled: deleteBusy,
-                          onClick: () => void permanentlyDelete(o),
-                        },
-                      ]}
-                    />
+                          {
+                            label: 'Refund',
+                            tone: 'danger',
+                            disabled: o.status === 'refunded' || deleteBusy,
+                            onClick: () => {
+                              setRefundId(o.id);
+                              setAmount(String(o.totalUgx));
+                              setError(null);
+                            },
+                          },
+                          {
+                            label: 'Delete permanently',
+                            tone: 'danger',
+                            disabled: deleteBusy,
+                            onClick: () => void permanentlyDelete(o),
+                          },
+                        ]}
+                      />
+                    </div>
                   </td>
                 </tr>
               ))
@@ -196,11 +209,12 @@ export function AdminOrdersPage() {
             <>
               <button
                 type="button"
-                className="btn btn-ghost"
+                className="btn admin-icon-btn admin-icon-btn-danger"
                 style={{ marginRight: 'auto' }}
                 disabled={deleteBusy}
                 onClick={() => void permanentlyDelete(viewing)}
               >
+                <Trash2 size={14} />
                 Delete permanently
               </button>
               <button type="button" className="btn btn-ghost" onClick={() => setViewing(null)}>

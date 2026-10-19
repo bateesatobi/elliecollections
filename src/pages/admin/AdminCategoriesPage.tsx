@@ -3,6 +3,8 @@ import { AdminDrawer, AdminRowMenu } from '../../components/admin/AdminChrome';
 import { AdminPagination, useAdminPagination } from '../../components/admin/AdminPagination';
 import { getAdminToken, marketApi } from '../../services/api';
 import type { MarketCategory, ProductKind } from '../../types';
+import { processLabel } from '../../utils/processCatalog';
+import { runProcess } from '../../utils/processProgress';
 import { swalConfirm, swalError, swalSuccess } from '../../utils/swal';
 
 const empty = (): Omit<MarketCategory, 'createdAt' | 'updatedAt'> => ({
@@ -55,10 +57,21 @@ export function AdminCategoriesPage() {
     if (!token) return;
     const isNew = !items.some((c) => c.id === editing.id);
     try {
-      await marketApi.upsertCategory(token, editing, isNew);
       const name = editing.name;
-      setEditing(null);
-      await load();
+      await runProcess(
+        {
+          kind: 'submit',
+          title: processLabel('admin.category.save', 'Saving category…'),
+          percent: 25,
+        },
+        async (set) => {
+          set(50, isNew ? 'Adding category…' : 'Updating category…');
+          await marketApi.upsertCategory(token, editing, isNew);
+          setEditing(null);
+          set(85, 'Refreshing…');
+          await load();
+        },
+      );
       await swalSuccess(
         isNew ? 'Category added' : 'Category updated',
         isNew ? `“${name}” was added.` : `“${name}” was saved.`,
@@ -77,8 +90,19 @@ export function AdminCategoriesPage() {
     const token = getAdminToken();
     if (!token) return;
     try {
-      await marketApi.deleteCategory(token, id);
-      await load();
+      await runProcess(
+        {
+          kind: 'delete',
+          title: processLabel('admin.category.delete', 'Deleting category…'),
+          percent: 30,
+        },
+        async (set) => {
+          set(55, 'Removing category…');
+          await marketApi.deleteCategory(token, id);
+          set(85, 'Refreshing…');
+          await load();
+        },
+      );
       await swalSuccess('Category deleted');
     } catch (err) {
       await swalError(

@@ -11,6 +11,8 @@ import {
   diversifyByCategory,
   recommendProducts,
 } from '../../utils/recommendations';
+import { processLabel } from '../../utils/processCatalog';
+import { runProcess } from '../../utils/processProgress';
 
 type SortKey = 'featured' | 'for-you' | 'price-asc' | 'price-desc' | 'newest';
 
@@ -113,7 +115,19 @@ export function ShopPage() {
 
   const applySearch = (e: FormEvent) => {
     e.preventDefault();
-    patch('q', searchDraft.trim() || null);
+    void runProcess(
+      {
+        kind: 'search',
+        title: processLabel('client.shop.search', 'Searching catalogue…'),
+        mode: 'bar',
+        percent: 30,
+      },
+      async (set) => {
+        set(70, 'Filtering pieces…');
+        patch('q', searchDraft.trim() || null);
+        await new Promise((r) => setTimeout(r, 180));
+      },
+    );
   };
 
   const clearSearch = () => {

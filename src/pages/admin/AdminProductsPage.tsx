@@ -30,6 +30,8 @@ import {
   parseShipToCodes,
   shipToShort,
 } from '../../utils/markets';
+import { processLabel } from '../../utils/processCatalog';
+import { runProcess } from '../../utils/processProgress';
 import { swalConfirm, swalError, swalSuccess } from '../../utils/swal';
 
 type ProductForm = Omit<Product, 'createdAt' | 'updatedAt'> & {
@@ -369,8 +371,19 @@ export function AdminProductsPage() {
     setViewLoading(true);
     setViewError(null);
     try {
-      const fresh = await marketApi.getProduct(p.id, true);
-      setViewing(fresh);
+      await runProcess(
+        {
+          kind: 'load',
+          title: processLabel('admin.product.load', 'Loading product…'),
+          mode: 'bar',
+          percent: 30,
+        },
+        async (set) => {
+          set(65, 'Fetching details…');
+          const fresh = await marketApi.getProduct(p.id, true);
+          setViewing(fresh);
+        },
+      );
     } catch (err) {
       setViewError(err instanceof Error ? err.message : 'Could not refresh product details');
     } finally {
@@ -436,20 +449,59 @@ export function AdminProductsPage() {
             </button>
           ))}
         </div>
-        <label className="admin-search">
+        <form
+          className="admin-search"
+          role="search"
+          onSubmit={(e) => {
+            e.preventDefault();
+            const value = new FormData(e.currentTarget).get('q');
+            const next = typeof value === 'string' ? value : search;
+            void runProcess(
+              {
+                kind: 'search',
+                title: processLabel('admin.product.search', 'Filtering products…'),
+                mode: 'bar',
+                percent: 30,
+              },
+              async (set) => {
+                set(70, 'Matching catalogue…');
+                setSearch(next.trim());
+                await new Promise((r) => setTimeout(r, 160));
+              },
+            );
+          }}
+        >
           <Search size={16} aria-hidden />
           <input
+            name="q"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search title, brand, category, country…"
             aria-label="Search products"
           />
           {search ? (
-            <button type="button" className="admin-search-clear" onClick={() => setSearch('')}>
+            <button
+              type="button"
+              className="admin-search-clear"
+              onClick={() => {
+                void runProcess(
+                  {
+                    kind: 'search',
+                    title: processLabel('admin.product.search', 'Filtering products…'),
+                    mode: 'bar',
+                    percent: 40,
+                  },
+                  async () => {
+                    setSearch('');
+                    await new Promise((r) => setTimeout(r, 120));
+                  },
+                );
+              }}
+            >
               Clear
             </button>
           ) : null}
-        </label>
+        </form>
       </div>
 
       <AdminDrawer

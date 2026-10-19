@@ -5,6 +5,8 @@ import { Seo } from '../../components/Seo';
 import { getCustomerToken, marketApi } from '../../services/api';
 import { useMarket } from '../../store/MarketStore';
 import { buildShopShareUrl, shareOrCopy } from '../../utils/referral';
+import { processLabel } from '../../utils/processCatalog';
+import { runProcess } from '../../utils/processProgress';
 import { swalError, swalSuccess } from '../../utils/swal';
 
 export function ReferralPage() {
@@ -19,9 +21,20 @@ export function ReferralPage() {
     if (!token) return;
     void (async () => {
       try {
-        const info = await marketApi.myReferral(token);
-        setCode(info.referral_code);
-        setCount(info.referral_count);
+        await runProcess(
+          {
+            kind: 'load',
+            title: processLabel('client.referral', 'Loading referral…'),
+            mode: 'bar',
+            percent: 30,
+          },
+          async (set) => {
+            set(65, 'Fetching your link…');
+            const info = await marketApi.myReferral(token);
+            setCode(info.referral_code);
+            setCount(info.referral_count);
+          },
+        );
       } catch (e) {
         await swalError('Referral', e instanceof Error ? e.message : 'Could not load referral link');
       }

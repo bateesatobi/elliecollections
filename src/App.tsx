@@ -1,4 +1,5 @@
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
+import { ProcessProgressHost } from './components/ProcessProgressHost';
 import { MarketProvider } from './store/MarketStore';
 import { CurrencyProvider } from './store/CurrencyStore';
 import { ClientLayout } from './layouts/ClientLayout';
@@ -35,6 +36,7 @@ export default function App() {
     <MarketProvider>
       <CurrencyProvider>
         <BrowserRouter>
+          <ProcessProgressHost />
           <Routes>
             <Route element={<ClientLayout />}>
               <Route index element={<HomePage />} />
