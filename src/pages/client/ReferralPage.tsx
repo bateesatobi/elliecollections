@@ -1,14 +1,11 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { Copy, Gift, Share2, Sparkles } from 'lucide-react';
+import { Seo } from '../../components/Seo';
 import { getCustomerToken, marketApi } from '../../services/api';
 import { useMarket } from '../../store/MarketStore';
-import {
-  buildShopShareUrl,
-  shareOrCopy,
-} from '../../utils/referral';
-import { swalSuccess, swalError } from '../../utils/swal';
-import { Copy, Share2 } from 'lucide-react';
-import { Seo } from '../../components/Seo';
+import { buildShopShareUrl, shareOrCopy } from '../../utils/referral';
+import { swalError, swalSuccess } from '../../utils/swal';
 
 export function ReferralPage() {
   const { customer } = useMarket();
@@ -31,101 +28,105 @@ export function ReferralPage() {
     })();
   }, [customer]);
 
-  if (!customer) {
-    return (
-      <div className="container" style={{ padding: '3rem 0' }}>
-        <Seo
-          title="Refer a friend"
-          description="Share Elliecollections with friends and track your referrals."
-          path="/refer"
-        />
-        <h1 style={{ fontFamily: 'var(--display)' }}>Referral links</h1>
-        <p className="muted">Sign in to get your personal Elliecollections referral code.</p>
-        <Link to="/signin?next=/refer" className="btn btn-primary" style={{ marginTop: 8 }}>
-          Sign in
-        </Link>
-      </div>
-    );
-  }
-
   const url = buildShopShareUrl(code);
 
+  const share = async () => {
+    if (!code) return;
+    setBusy(true);
+    try {
+      const r = await shareOrCopy({
+        title: 'Elliecollections',
+        text: 'Discover feminine fashion on Elliecollections',
+        url,
+      });
+      await swalSuccess(
+        r === 'shared' ? 'Shared' : 'Copied',
+        r === 'shared' ? 'Thanks for sharing.' : 'Referral link copied to clipboard.',
+      );
+    } finally {
+      setBusy(false);
+    }
+  };
+
   return (
-    <div className="container" style={{ padding: '3rem 0', maxWidth: 640 }}>
+    <div className="ec-page">
       <Seo
         title="Refer a friend"
         description="Share Elliecollections with friends and track your referrals."
         path="/refer"
       />
-      <p className="eyebrow">Invite & earn love</p>
-      <h1 style={{ fontFamily: 'var(--display)', marginTop: 0 }}>Your referral link</h1>
-      <p className="muted">
-        Share Elliecollections with friends. When they join using your link, we track the referral.
-      </p>
-      <div
-        style={{
-          background: 'var(--white)',
-          border: '1px solid var(--line)',
-          padding: '1.25rem',
-          marginTop: '1.25rem',
-        }}
-      >
-        <div className="muted" style={{ fontSize: 12, fontWeight: 700, letterSpacing: '0.08em' }}>
-          CODE
+      <header className="ec-page-hero">
+        <div className="container-wide">
+          <p className="eyebrow">Invite &amp; earn love</p>
+          <h1>Refer a friend</h1>
+          <p className="muted">
+            Send your link. When she joins or shops with it, we credit the referral to you.
+          </p>
         </div>
-        <div style={{ fontFamily: 'var(--display)', fontSize: '2rem', margin: '0.35rem 0' }}>
-          {code || '…'}
-        </div>
-        <div className="muted" style={{ fontSize: 13, marginBottom: 12 }}>
-          {count} friend{count === 1 ? '' : 's'} joined with your code
-        </div>
-        <code
-          style={{
-            display: 'block',
-            wordBreak: 'break-all',
-            background: 'var(--blush-soft)',
-            padding: '0.75rem',
-            fontSize: 13,
-          }}
-        >
-          {url}
-        </code>
-        <div style={{ display: 'flex', gap: 8, marginTop: 14, flexWrap: 'wrap' }}>
-          <button
-            type="button"
-            className="btn btn-primary"
-            disabled={busy || !code}
-            onClick={() => {
-              setBusy(true);
-              void shareOrCopy({
-                title: 'Elliecollections',
-                text: 'Discover feminine fashion on Elliecollections',
-                url,
-              })
-                .then((r) =>
-                  swalSuccess(
-                    r === 'shared' ? 'Shared' : 'Copied',
-                    r === 'shared' ? 'Thanks for sharing.' : 'Referral link copied to clipboard.',
-                  ),
-                )
-                .finally(() => setBusy(false));
-            }}
-          >
-            <Share2 size={16} /> Share link
-          </button>
-          <button
-            type="button"
-            className="btn btn-secondary"
-            disabled={!code}
-            onClick={() => {
-              void navigator.clipboard.writeText(url).then(() =>
-                swalSuccess('Copied', 'Referral link copied.'),
-              );
-            }}
-          >
-            <Copy size={16} /> Copy
-          </button>
-        </div>
+      </header>
+
+      <div className="container-wide ec-page-body">
+        {!customer ? (
+          <div className="ec-page-card ec-request-gate">
+            <Gift size={28} />
+            <h2>Sign in for your personal link</h2>
+            <p className="muted">Your referral code is tied to the phone on your account.</p>
+            <Link to="/signin?next=/refer" className="btn btn-primary">
+              Continue with phone
+            </Link>
+          </div>
+        ) : (
+          <div className="ec-refer-layout">
+            <div className="ec-page-card">
+              <span className="ec-refer-kicker">Your code</span>
+              <div className="ec-refer-code">{code || '…'}</div>
+              <p className="muted">
+                {count} friend{count === 1 ? '' : 's'} joined with your code
+              </p>
+              <code className="ec-refer-url">{url}</code>
+              <div className="ec-page-actions">
+                <button type="button" className="btn btn-primary" disabled={busy || !code} onClick={() => void share()}>
+                  <Share2 size={16} /> Share link
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  disabled={!code}
+                  onClick={() => {
+                    void navigator.clipboard.writeText(url).then(() =>
+                      swalSuccess('Copied', 'Referral link copied.'),
+                    );
+                  }}
+                >
+                  <Copy size={16} /> Copy
+                </button>
+              </div>
+            </div>
+            <ol className="ec-refer-steps">
+              <li>
+                <Sparkles size={18} />
+                <div>
+                  <strong>Share your link</strong>
+                  <p>WhatsApp, Instagram, or a text — your code is already in the URL.</p>
+                </div>
+              </li>
+              <li>
+                <Gift size={18} />
+                <div>
+                  <strong>She shops the collection</strong>
+                  <p>New visitors land on the shop with your referral attached.</p>
+                </div>
+              </li>
+              <li>
+                <Share2 size={18} />
+                <div>
+                  <strong>We track it for you</strong>
+                  <p>The counter above updates when someone joins with your code.</p>
+                </div>
+              </li>
+            </ol>
+          </div>
+        )}
       </div>
     </div>
   );

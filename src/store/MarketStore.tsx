@@ -38,6 +38,7 @@ type MarketContextValue = {
   cartTotal: number;
   loading: boolean;
   refreshCatalog: () => Promise<void>;
+  setProductLikesCount: (productId: string, likesCount: number) => void;
   addToCart: (productId: string, qty?: number, size?: string) => void;
   setCartQty: (productId: string, qty: number, size?: string) => void;
   removeFromCart: (productId: string, size?: string) => void;
@@ -117,6 +118,14 @@ export function MarketProvider({ children }: { children: ReactNode }) {
   const refreshCatalog = useCallback(async () => {
     const items = await marketApi.listProducts();
     setProducts(items);
+  }, []);
+
+  const setProductLikesCount = useCallback((productId: string, likesCount: number) => {
+    setProducts((prev) =>
+      prev.map((p) =>
+        p.id === productId ? { ...p, likesCount: Math.max(0, likesCount) } : p,
+      ),
+    );
   }, []);
 
   const refreshCustomerOrders = useCallback(async (token: string) => {
@@ -534,6 +543,7 @@ export function MarketProvider({ children }: { children: ReactNode }) {
     cartTotal,
     loading,
     refreshCatalog,
+    setProductLikesCount,
     addToCart,
     setCartQty,
     removeFromCart,

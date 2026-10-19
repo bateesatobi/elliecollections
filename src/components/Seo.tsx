@@ -91,13 +91,14 @@ export function organizationJsonLd() {
     image: DEFAULT_IMAGE,
     priceRange: '$$',
     telephone: '+256746157039',
-    address: {
-      '@type': 'PostalAddress',
-      streetAddress: 'Plot 12, Acacia Avenue, Kololo',
-      addressLocality: 'Kampala',
-      addressCountry: 'UG',
-    },
-    areaServed: ['UG', 'KE', 'TZ', 'RW'],
+    areaServed: [
+      { '@type': 'Country', name: 'Uganda' },
+      { '@type': 'Country', name: 'Kenya' },
+      { '@type': 'Country', name: 'Tanzania' },
+      { '@type': 'Country', name: 'Rwanda' },
+      { '@type': 'Country', name: 'South Sudan' },
+      { '@type': 'Country', name: 'DR Congo' },
+    ],
   };
 }
 

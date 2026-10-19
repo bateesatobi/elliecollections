@@ -222,10 +222,10 @@ export function CheckoutPage() {
 
       const deliveryAddress =
         fulfillment === 'pickup'
-          ? `${SHOP.name} — ${SHOP.address}`
+          ? `${SHOP.name} — arrange collection in ${SHOP.region}`
           : recipient.address.trim();
       const district =
-        fulfillment === 'pickup' ? SHOP.location : recipient.location.trim();
+        fulfillment === 'pickup' ? SHOP.region : recipient.location.trim();
 
       const result = await placeOrder({
         deliveryAddress,
@@ -356,12 +356,12 @@ export function CheckoutPage() {
               </>
             ) : (
               <div className="alert alert-ok" style={{ marginBottom: 14 }}>
-                <strong>{SHOP.name}</strong>
+                <strong>{SHOP.name} collection</strong>
                 <div style={{ marginTop: 4 }}>
-                  {SHOP.address}, {SHOP.location}
+                  We’ll confirm your pickup point on WhatsApp after you place the order.
                 </div>
                 <div className="muted" style={{ marginTop: 4, fontSize: 13 }}>
-                  {SHOP.hours}
+                  Serving {SHOP.marketsLabel}
                 </div>
                 <p className="muted" style={{ margin: '8px 0 0', fontSize: 12 }}>
                   Bring your order reference and matching ID / phone when collecting.

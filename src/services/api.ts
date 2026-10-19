@@ -7,6 +7,8 @@ import type {
   Order,
   OrderStatus,
   PaymentMethod,
+  PieceRequest,
+  PieceRequestStatus,
   Product,
   ProductKind,
   SessionUser,
@@ -78,6 +80,7 @@ type ApiProduct = {
   delivery_available?: boolean | null;
   delivery_mode?: string | null;
   delivery_period?: string | null;
+  likes_count?: number | null;
   created_at: string;
   updated_at?: string | null;
 };
@@ -273,6 +276,7 @@ export function mapProduct(p: ApiProduct): Product {
     deliveryAvailable: p.delivery_available !== false,
     deliveryMode,
     deliveryPeriod,
+    likesCount: Math.max(0, Number(p.likes_count) || 0),
     createdAt: typeof p.created_at === 'string' ? p.created_at : new Date(p.created_at).toISOString(),
     updatedAt: p.updated_at
       ? typeof p.updated_at === 'string'
@@ -399,6 +403,21 @@ function mapAdminUser(u: ApiAdminUser): User {
 }
 
 export const marketApi = {
+  async setProductLike(productId: string, visitorKey: string, liked: boolean) {
+    const data = await request<{ product_id: string; liked: boolean; likes_count: number }>(
+      `/market/products/${encodeURIComponent(productId)}/like`,
+      {
+        method: 'POST',
+        body: JSON.stringify({ visitor_key: visitorKey, liked }),
+      },
+    );
+    return {
+      productId: data.product_id,
+      liked: !!data.liked,
+      likesCount: Math.max(0, Number(data.likes_count) || 0),
+    };
+  },
+
   async listProducts(params?: { kind?: string; q?: string }) {
     const qs = new URLSearchParams();
     if (params?.kind) qs.set('kind', params.kind);
@@ -1153,4 +1172,62 @@ export const marketApi = {
   async deletePromo(token: string, id: string) {
     await request(`/market/admin/promos/${id}`, { method: 'DELETE', token });
   },
+
+  async createPieceRequest(
+    token: string,
+    payload: { description: string; imageBase64: string },
+  ) {
+    return request<ApiPieceRequest>('/market/requests', {
+      method: 'POST',
+      token,
+      body: JSON.stringify({
+        description: payload.description,
+        image_base64: payload.imageBase64,
+      }),
+    }).then(mapPieceRequest);
+  },
+
+  async adminListRequests(token: string) {
+    const data = await request<{ items: ApiPieceRequest[]; total: number }>(
+      '/market/admin/requests',
+      { token },
+    );
+    return { items: (data.items || []).map(mapPieceRequest), total: data.total || 0 };
+  },
+
+  async adminUpdateRequest(token: string, id: string, status: PieceRequestStatus) {
+    const row = await request<ApiPieceRequest>(`/market/inquiries/${id}`, {
+      method: 'PATCH',
+      token,
+      body: JSON.stringify({ status }),
+    });
+    return mapPieceRequest(row);
+  },
 };
+
+type ApiPieceRequest = {
+  id: string;
+  type?: string;
+  message?: string | null;
+  status?: string;
+  image_base64?: string | null;
+  contact_phone?: string | null;
+  contact_name?: string | null;
+  created_at?: string;
+};
+
+function mapPieceRequest(row: ApiPieceRequest): PieceRequest {
+  const status = row.status;
+  const safeStatus: PieceRequestStatus =
+    status === 'contacted' || status === 'closed' ? status : 'open';
+  return {
+    id: row.id,
+    type: row.type || 'request',
+    message: row.message || '',
+    status: safeStatus,
+    imageBase64: row.image_base64 || undefined,
+    contactPhone: row.contact_phone || undefined,
+    contactName: row.contact_name || undefined,
+    createdAt: row.created_at || new Date().toISOString(),
+  };
+}

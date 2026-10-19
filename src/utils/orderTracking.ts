@@ -78,7 +78,7 @@ export function whereIsOrder(order: Order): { headline: string; body: string } {
         return {
           headline: pickup ? 'Order confirmed — pay at the shop' : 'Order confirmed — pay on delivery',
           body: pickup
-            ? 'We’re preparing your pieces. Bring cash when you collect at Kololo.'
+            ? 'We’re preparing your pieces. We’ll confirm pickup details on WhatsApp.'
             : 'We’re preparing your pieces. Have cash ready for the rider when your order arrives.',
         };
       }

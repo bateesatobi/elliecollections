@@ -14,7 +14,7 @@ export function AmzPrice({
   unit,
   size = 'card',
 }: Props) {
-  const { formatMoney, currency } = useCurrency();
+  const { formatMoney } = useCurrency();
   const d = getPriceDisplay(priceUgx, compareAtPriceUgx);
   const amountClass = size === 'detail' ? 'amz-price-amount--lg' : 'amz-price-amount';
 
@@ -26,9 +26,6 @@ export function AmzPrice({
         </span>
         {unit ? <span className="unit"> / {unit}</span> : null}
       </div>
-      {currency.code !== 'UGX' ? (
-        <div className="amz-list-price">≈ UGX {d.priceUgx.toLocaleString()}</div>
-      ) : null}
 
       {d.hasDiscount && d.listPriceUgx != null ? (
         <>

@@ -24,9 +24,11 @@ import { AdminUnitsPage } from './pages/admin/AdminUnitsPage';
 import { AdminPromosPage } from './pages/admin/AdminPromosPage';
 import { AdminReviewsPage } from './pages/admin/AdminReviewsPage';
 import { TrackOrderPage } from './pages/client/TrackOrderPage';
+import { RequestPiecePage } from './pages/client/RequestPiecePage';
 import { SignInPage } from './pages/client/SignInPage';
 import { SizeGuidePage } from './pages/client/SizeGuidePage';
 import { ReturnsPage } from './pages/client/ReturnsPage';
+import { AdminRequestsPage } from './pages/admin/AdminRequestsPage';
 
 export default function App() {
   return (
@@ -44,6 +46,7 @@ export default function App() {
               <Route path="orders" element={<OrdersPage />} />
               <Route path="orders/:id" element={<OrderDetailPage />} />
               <Route path="track" element={<TrackOrderPage />} />
+              <Route path="request" element={<RequestPiecePage />} />
               <Route path="wishlist" element={<WishlistPage />} />
               <Route path="refer" element={<ReferralPage />} />
               <Route path="size-guide" element={<SizeGuidePage />} />
@@ -59,6 +62,7 @@ export default function App() {
               <Route path="units" element={<AdminUnitsPage />} />
               <Route path="orders" element={<AdminOrdersPage />} />
               <Route path="reviews" element={<AdminReviewsPage />} />
+              <Route path="requests" element={<AdminRequestsPage />} />
               <Route path="users" element={<AdminUsersPage />} />
               <Route path="revenue" element={<AdminRevenuePage />} />
               <Route path="disbursements" element={<AdminDisbursementsPage />} />

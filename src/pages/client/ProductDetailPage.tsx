@@ -9,7 +9,7 @@ import { useMarket } from '../../store/MarketStore';
 import { useCurrency } from '../../store/CurrencyStore';
 import { DELIVERY_PERIOD_LABELS, PRODUCT_KIND_LABELS, SALE_MODE_LABELS } from '../../types';
 import { effectiveMinOrderQty, getPriceDisplay, unitPriceForQty } from '../../utils/pricing';
-import { isInWishlist, toggleWishlist } from '../../utils/wishlist';
+import { isInWishlist, toggleWishlistAndSync } from '../../utils/wishlist';
 import {
   buildProductShareUrl,
   getStoredReferral,
@@ -25,16 +25,19 @@ import {
   SHOP,
   whatsappHref,
 } from '../../utils/shopContact';
+import { shipToLabel } from '../../utils/markets';
+import { recommendProducts, trackProductView } from '../../utils/recommendations';
 
 export function ProductDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { products, addToCart, customer } = useMarket();
+  const { products, addToCart, customer, setProductLikesCount } = useMarket();
   const { formatMoney } = useCurrency();
   const product = products.find((p) => p.id === id && p.active);
   const [qty, setQty] = useState(1);
   const [selectedSize, setSelectedSize] = useState<string>('');
   const [loved, setLoved] = useState(() => (id ? isInWishlist(id) : false));
+  const [likeBusy, setLikeBusy] = useState(false);
   const [shareBusy, setShareBusy] = useState(false);
   const [sizeHint, setSizeHint] = useState(false);
   const [reviewAvg, setReviewAvg] = useState(0);
@@ -59,16 +62,18 @@ export function ProductDetailPage() {
     setQty(effectiveMinOrderQty(product));
   }, [product?.id, product?.minOrderQty, product?.saleMode]);
 
+  useEffect(() => {
+    if (product?.id) trackProductView(product.id);
+  }, [product?.id]);
+
   const related = useMemo(() => {
     if (!product) return [];
-    return products
-      .filter(
-        (p) =>
-          p.active &&
-          p.id !== product.id &&
-          (p.category === product.category || p.kind === product.kind),
-      )
-      .slice(0, 4);
+    return recommendProducts(products, {
+      limit: 4,
+      excludeId: product.id,
+      boostCategory: product.category,
+      boostKind: product.kind,
+    });
   }, [products, product]);
 
   const availableSizes = useMemo(() => {
@@ -199,7 +204,6 @@ export function ProductDetailPage() {
             {PRODUCT_KIND_LABELS[product.kind]} · {product.category || 'Fashion'}
             {' · '}
             {SALE_MODE_LABELS[product.saleMode === 'wholesale' ? 'wholesale' : 'retail']}
-            {product.location ? ` · ${product.location}` : ''}
           </div>
           <div className="amz-stars">
             {reviews > 0 ? (
@@ -372,12 +376,10 @@ export function ProductDetailPage() {
                   <td>Unit</td>
                   <td>{product.unit}</td>
                 </tr>
-                {product.location ? (
-                  <tr>
-                    <td>Location</td>
-                    <td>{product.location}</td>
-                  </tr>
-                ) : null}
+                <tr>
+                  <td>Ships to</td>
+                  <td>{shipToLabel(product.location)}</td>
+                </tr>
                 <tr>
                   <td>Delivery</td>
                   <td>
@@ -521,10 +523,21 @@ export function ProductDetailPage() {
             <button
               type="button"
               className="btn btn-secondary"
-              onClick={() => setLoved(toggleWishlist(product.id).includes(product.id))}
+              disabled={likeBusy}
+              onClick={() => {
+                if (likeBusy) return;
+                setLikeBusy(true);
+                void toggleWishlistAndSync(product.id, product.likesCount ?? 0)
+                  .then((r) => {
+                    setLoved(r.liked);
+                    setProductLikesCount(product.id, r.likesCount);
+                  })
+                  .finally(() => setLikeBusy(false));
+              }}
             >
               <Heart size={14} fill={loved ? 'currentColor' : 'none'} />
-              {loved ? 'Saved' : 'Wishlist'}
+              {loved ? 'Liked' : 'Like'}
+              {(product.likesCount ?? 0) > 0 ? ` · ${product.likesCount}` : ''}
             </button>
             <button
               type="button"
@@ -547,9 +560,9 @@ export function ProductDetailPage() {
         <section className="container" style={{ padding: '1rem 0 3rem' }}>
           <div className="ec-section-head">
             <div>
-              <p className="eyebrow">You may also like</p>
+              <p className="eyebrow">Recommended for you</p>
               <h2 style={{ margin: 0, fontFamily: 'var(--display)', fontSize: '1.8rem' }}>
-                Related pieces
+                You may also like
               </h2>
             </div>
           </div>

@@ -1,9 +1,10 @@
+import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { Heart } from 'lucide-react';
 import { ProductCard } from '../../components/ProductCard';
 import { Seo } from '../../components/Seo';
 import { useMarket } from '../../store/MarketStore';
 import { loadWishlist } from '../../utils/wishlist';
-import { useMemo, useState } from 'react';
 
 export function WishlistPage() {
   const { products } = useMarket();
@@ -14,34 +15,48 @@ export function WishlistPage() {
   );
 
   return (
-    <div className="ec-shop container-wide">
+    <div className="ec-page">
       <Seo title="Wishlist" path="/wishlist" noIndex />
-      <div className="ec-shop-head">
-        <div>
-          <p className="eyebrow">Saved for later</p>
-          <h1>Wishlist</h1>
-          <p className="muted">{list.length} saved piece{list.length === 1 ? '' : 's'}</p>
-        </div>
-        <Link to="/shop" className="btn btn-secondary">
-          Continue shopping
-        </Link>
-      </div>
-      {list.length === 0 ? (
-        <div className="ec-empty">
-          Your wishlist is empty. Tap the heart on any piece to save it.
-          <div style={{ marginTop: 12 }}>
-            <button type="button" className="btn btn-primary" onClick={() => setIds(loadWishlist())}>
-              Refresh
-            </button>
+      <header className="ec-page-hero">
+        <div className="container-wide ec-page-hero-row">
+          <div>
+            <p className="eyebrow">Saved for later</p>
+            <h1>Wishlist</h1>
+            <p className="muted">
+              {list.length} saved piece{list.length === 1 ? '' : 's'} · Tap the heart on any card to add more
+            </p>
           </div>
+          <Link to="/shop" className="btn btn-secondary">
+            Continue shopping
+          </Link>
         </div>
-      ) : (
-        <div className="ec-product-grid">
-          {list.map((p) => (
-            <ProductCard key={p.id} product={p} />
-          ))}
-        </div>
-      )}
+      </header>
+
+      <div className="container-wide ec-page-body">
+        {list.length === 0 ? (
+          <div className="ec-page-card ec-request-gate">
+            <Heart size={28} />
+            <h2>Nothing saved yet</h2>
+            <p className="muted">
+              Tap the heart on a dress, bag, or accessory and it will wait for you here.
+            </p>
+            <div className="ec-page-actions">
+              <Link to="/shop" className="btn btn-primary">
+                Browse the collection
+              </Link>
+              <button type="button" className="btn btn-secondary" onClick={() => setIds(loadWishlist())}>
+                Refresh
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="ec-product-grid">
+            {list.map((p) => (
+              <ProductCard key={p.id} product={p} />
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

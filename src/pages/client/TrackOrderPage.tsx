@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
+import { PackageSearch, Phone } from 'lucide-react';
 import { ClientOrderCard } from '../../components/ClientOrderCard';
 import { OrderTrackingPanel } from '../../components/OrderTrackingPanel';
 import { PhoneInput } from '../../components/PhoneInput';
@@ -129,135 +130,140 @@ export function TrackOrderPage() {
 
   if (selected) {
     return (
-      <div className="container section">
+      <div className="ec-page">
         <Seo
           title={`Tracking ${selected.id.slice(0, 8)}…`}
           description="Live order tracking for your Elliecollections purchase."
           path="/track"
           noIndex
         />
-        <button
-          type="button"
-          className="btn btn-secondary"
-          style={{ marginBottom: 14 }}
-          onClick={() => setSelectedId(null)}
-        >
-          ← All orders
-        </button>
-        <OrderTrackingPanel order={selected} showBackLink={false} />
+        <div className="container-wide ec-page-body">
+          <button
+            type="button"
+            className="btn btn-secondary"
+            style={{ marginBottom: 16 }}
+            onClick={() => setSelectedId(null)}
+          >
+            ← All orders
+          </button>
+          <OrderTrackingPanel order={selected} showBackLink={false} />
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="container section">
+    <div className="ec-page">
       <Seo
         title="Track your order"
         description="Track Elliecollections orders with the phone number used at checkout — no account needed."
         path="/track"
       />
 
-      <header className="ec-track-list-head">
-        <div>
+      <header className="ec-page-hero">
+        <div className="container-wide">
           <p className="eyebrow">Delivery status</p>
-          <h1 style={{ fontFamily: 'var(--display)', margin: '0 0 0.35rem' }}>
-            Track your orders
-          </h1>
-          <p className="muted" style={{ margin: 0 }}>
-            Enter the phone number you used at checkout. Current orders appear at the top.
+          <h1>Track your order</h1>
+          <p className="muted">
+            Use the phone from checkout. Live orders sit at the top; tap a card for the full timeline.
           </p>
         </div>
       </header>
 
-      {customer ? (
-        <div className="chip-row" style={{ margin: '1.25rem 0' }}>
-          <button
-            type="button"
-            className={`chip ${mode === 'account' ? 'active' : ''}`}
-            onClick={() => {
-              setMode('account');
-              setSelectedId(null);
-            }}
-          >
-            My orders
-          </button>
-          <button
-            type="button"
-            className={`chip ${mode === 'lookup' ? 'active' : ''}`}
-            onClick={() => setMode('lookup')}
-          >
-            Find by phone
-          </button>
-        </div>
-      ) : null}
-
-      {mode === 'lookup' || !customer ? (
-        <>
-          <div className="ec-track-lookup panel">
-            <p className="eyebrow">No account needed</p>
-            <h2 style={{ fontFamily: 'var(--display)', marginTop: 0, fontSize: '1.6rem' }}>
-              Your phone number
-            </h2>
-            <p className="muted" style={{ marginTop: 0 }}>
-              We’ll show every order placed with this number.
-            </p>
-            {error ? <div className="alert alert-error">{error}</div> : null}
-            <form onSubmit={onLookup} className="ec-track-form">
-              <PhoneInput
-                id="track-phone"
-                label="Phone number"
-                value={phone}
-                onChange={setPhone}
-                defaultIso={defaultIso}
-                required
-                disabled={busy}
-                hint="Use the same country code you used at checkout"
-              />
-              <button type="submit" className="btn btn-primary" disabled={busy}>
-                {busy ? 'Looking up…' : 'Show my orders'}
-              </button>
-            </form>
-            {!customer ? (
-              <p className="muted" style={{ marginTop: 14, fontSize: 13 }}>
-                Have an account? <Link to="/signin?next=/track">Sign in</Link>
-              </p>
-            ) : null}
+      <div className="container-wide ec-page-body">
+        {customer ? (
+          <div className="ec-page-tabs">
+            <button
+              type="button"
+              className={mode === 'account' ? 'is-on' : ''}
+              onClick={() => {
+                setMode('account');
+                setSelectedId(null);
+              }}
+            >
+              My orders
+            </button>
+            <button
+              type="button"
+              className={mode === 'lookup' ? 'is-on' : ''}
+              onClick={() => setMode('lookup')}
+            >
+              Find by phone
+            </button>
           </div>
+        ) : null}
 
-          {lookedUp && !busy && !error && guestSorted.length > 0 ? (
-            <div style={{ marginTop: 20 }}>
-              <p className="muted" style={{ marginBottom: 10 }}>
-                {guestSorted.length} order{guestSorted.length === 1 ? '' : 's'} for this phone
-              </p>
-              <OrderCardList orders={guestSorted} onSelect={setSelectedId} />
+        {mode === 'lookup' || !customer ? (
+          <>
+            <div className="ec-track-shell">
+              <div className="ec-page-card">
+                <p className="eyebrow">No account needed</p>
+                <h2>Your checkout phone</h2>
+                <p className="muted">We’ll list every order placed with this number.</p>
+                {error ? <div className="alert alert-error">{error}</div> : null}
+                <form onSubmit={onLookup} className="ec-track-form">
+                  <PhoneInput
+                    id="track-phone"
+                    label="Phone number"
+                    value={phone}
+                    onChange={setPhone}
+                    defaultIso={defaultIso}
+                    required
+                    disabled={busy}
+                    hint="Same country code you used at checkout"
+                  />
+                  <button type="submit" className="btn btn-primary" disabled={busy}>
+                    {busy ? 'Looking up…' : 'Show my orders'}
+                  </button>
+                </form>
+                {!customer ? (
+                  <p className="muted" style={{ marginTop: 14, fontSize: 13 }}>
+                    Have an account? <Link to="/signin?next=/track">Sign in</Link>
+                  </p>
+                ) : null}
+              </div>
+              <aside className="ec-page-aside">
+                <div>
+                  <Phone size={18} />
+                  <div>
+                    <strong>Phone is enough</strong>
+                    <p>Guest checkout and signed-in orders both appear here.</p>
+                  </div>
+                </div>
+                <div>
+                  <PackageSearch size={18} />
+                  <div>
+                    <strong>Current first</strong>
+                    <p>Packed and in-transit orders sit above delivered ones.</p>
+                  </div>
+                </div>
+              </aside>
             </div>
-          ) : null}
-        </>
-      ) : loading && !mine.length ? (
-        <div className="empty">Loading your orders…</div>
-      ) : !mine.length ? (
-        <div className="empty">
-          No orders on this account yet. <Link to="/shop">Start shopping</Link> or{' '}
-          <button
-            type="button"
-            onClick={() => setMode('lookup')}
-            style={{
-              background: 'none',
-              border: 'none',
-              padding: 0,
-              color: 'var(--blush-deep)',
-              fontWeight: 700,
-              cursor: 'pointer',
-              textDecoration: 'underline',
-            }}
-          >
-            find by phone
-          </button>
-          .
-        </div>
-      ) : (
-        <OrderCardList orders={mine} onSelect={setSelectedId} />
-      )}
+
+            {lookedUp && !busy && !error && guestSorted.length > 0 ? (
+              <div style={{ marginTop: 28 }}>
+                <p className="muted" style={{ marginBottom: 12 }}>
+                  {guestSorted.length} order{guestSorted.length === 1 ? '' : 's'} for this phone
+                </p>
+                <OrderCardList orders={guestSorted} onSelect={setSelectedId} />
+              </div>
+            ) : null}
+          </>
+        ) : loading && !mine.length ? (
+          <div className="ec-empty">Loading your orders…</div>
+        ) : !mine.length ? (
+          <div className="ec-empty">
+            No orders on this account yet.{' '}
+            <Link to="/shop">Start shopping</Link> or{' '}
+            <button type="button" className="ec-text-btn" onClick={() => setMode('lookup')}>
+              find by phone
+            </button>
+            .
+          </div>
+        ) : (
+          <OrderCardList orders={mine} onSelect={setSelectedId} />
+        )}
+      </div>
     </div>
   );
 }

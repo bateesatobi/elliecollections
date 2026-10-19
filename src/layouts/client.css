@@ -31,14 +31,21 @@
 
 .ec-logo {
   display: inline-flex;
-  align-items: baseline;
-  gap: 0.15rem;
+  align-items: center;
+  gap: 0.45rem;
   font-family: var(--display);
-  font-size: 1.65rem;
+  font-size: 1.55rem;
   font-weight: 600;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.01em;
   color: var(--ink);
   line-height: 1;
+}
+
+.ec-logo-mark {
+  width: 1.65rem;
+  height: 1.65rem;
+  flex-shrink: 0;
+  border-radius: 50%;
 }
 
 .ec-logo em {
@@ -658,11 +665,49 @@
   .amz-cart-page { grid-template-columns: 1fr; }
 }
 
+.ec-product-media-wrap {
+  position: relative;
+}
+
+.ec-card-float {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 4;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.ec-card-float .ec-icon-btn {
+  position: relative;
+  width: 38px;
+  height: 38px;
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow: 0 8px 20px rgba(28, 20, 24, 0.14);
+}
+
+.ec-like-count {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: var(--blush-deep);
+  color: #fff;
+  font-size: 0.62rem;
+  font-weight: 800;
+  line-height: 16px;
+  text-align: center;
+}
+
 .ec-card-badges {
   position: absolute;
   top: 10px;
   left: 10px;
-  right: 10px;
+  right: 56px;
   z-index: 2;
   display: flex;
   flex-wrap: wrap;
@@ -715,7 +760,7 @@
 
 .ec-card-actions {
   display: grid;
-  grid-template-columns: 1fr auto auto;
+  grid-template-columns: 1fr;
   gap: 0.5rem;
   margin-top: 1.05rem;
   align-items: stretch;
@@ -2032,6 +2077,284 @@
 
 @media (max-width: 520px) {
   .ec-trust-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.ec-page-hero {
+  padding: 2.6rem 0 2rem;
+  background:
+    radial-gradient(ellipse at 8% 0%, rgba(212, 165, 165, 0.28), transparent 52%),
+    linear-gradient(180deg, var(--ivory) 0%, var(--rose-mist, #f7f1f2) 100%);
+  border-bottom: 1px solid var(--line);
+}
+
+.ec-page-hero h1 {
+  margin: 0;
+  font-family: var(--display);
+  font-size: clamp(2rem, 4vw, 2.7rem);
+  font-weight: 600;
+}
+
+.ec-page-hero .muted {
+  max-width: 38rem;
+  margin: 0.45rem 0 0;
+}
+
+.ec-page-hero-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: end;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.ec-page-body {
+  padding: 1.75rem 0 3.5rem;
+}
+
+.ec-page-card {
+  background: var(--white);
+  border: 1px solid var(--line);
+  padding: 1.35rem 1.4rem 1.5rem;
+  display: grid;
+  gap: 0.95rem;
+}
+
+.ec-page-card h2 {
+  margin: 0;
+  font-family: var(--display);
+  font-size: 1.55rem;
+  font-weight: 600;
+}
+
+.ec-page-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+.ec-page-tabs {
+  display: inline-flex;
+  gap: 0.35rem;
+  padding: 0.25rem;
+  background: var(--ivory);
+  border: 1px solid var(--line);
+  margin-bottom: 1.25rem;
+}
+
+.ec-page-tabs button {
+  border: 0;
+  background: transparent;
+  padding: 0.55rem 0.95rem;
+  font: inherit;
+  font-weight: 700;
+  font-size: 0.88rem;
+  color: var(--ink-soft);
+  cursor: pointer;
+}
+
+.ec-page-tabs button.is-on {
+  background: var(--ink);
+  color: #fff;
+}
+
+.ec-request-gate {
+  max-width: 480px;
+  text-align: left;
+}
+
+.ec-request-gate svg {
+  color: var(--blush-deep);
+}
+
+.ec-request-layout,
+.ec-track-shell,
+.ec-refer-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+  gap: 1.25rem;
+  align-items: start;
+}
+
+.ec-dropzone {
+  position: relative;
+  min-height: 280px;
+  border: 1px dashed #d4b8bd;
+  background: #fff;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  overflow: hidden;
+}
+
+.ec-dropzone input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.ec-dropzone img {
+  width: 100%;
+  height: 100%;
+  min-height: 280px;
+  object-fit: cover;
+}
+
+.ec-dropzone-copy {
+  display: grid;
+  gap: 0.35rem;
+  justify-items: center;
+  text-align: center;
+  padding: 1.5rem;
+  color: var(--ink-soft);
+}
+
+.ec-dropzone-copy strong {
+  font-family: var(--display);
+  font-size: 1.4rem;
+  color: var(--ink);
+}
+
+.ec-dropzone em {
+  position: absolute;
+  left: 12px;
+  bottom: 10px;
+  font-size: 0.75rem;
+  background: rgba(255, 255, 255, 0.9);
+  padding: 0.2rem 0.45rem;
+}
+
+.ec-contact-lock {
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-start;
+  padding: 0.85rem 0.95rem;
+  background: var(--blush-soft);
+  border: 1px solid var(--line);
+}
+
+.ec-contact-lock svg {
+  margin-top: 2px;
+  color: var(--blush-deep);
+}
+
+.ec-contact-lock div {
+  display: grid;
+  gap: 0.1rem;
+}
+
+.ec-contact-lock-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.ec-field-span,
+.field > span {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--ink-soft);
+}
+
+.ec-track-form {
+  display: grid;
+  gap: 0.9rem;
+}
+
+.ec-page-aside {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.ec-page-aside > div {
+  display: flex;
+  gap: 0.75rem;
+  background: #fff;
+  border: 1px solid var(--line);
+  padding: 1rem 1.1rem;
+}
+
+.ec-page-aside svg {
+  color: var(--blush-deep);
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.ec-page-aside p {
+  margin: 0.2rem 0 0;
+  color: var(--muted);
+  font-size: 0.88rem;
+}
+
+.ec-text-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--blush-deep);
+  font-weight: 700;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.ec-refer-kicker {
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.ec-refer-code {
+  font-family: var(--display);
+  font-size: clamp(2rem, 4vw, 2.6rem);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+
+.ec-refer-url {
+  display: block;
+  word-break: break-all;
+  background: var(--blush-soft);
+  padding: 0.75rem 0.9rem;
+  font-size: 0.82rem;
+}
+
+.ec-refer-steps {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.85rem;
+}
+
+.ec-refer-steps li {
+  display: flex;
+  gap: 0.8rem;
+  background: #fff;
+  border: 1px solid var(--line);
+  padding: 1rem 1.1rem;
+}
+
+.ec-refer-steps svg {
+  color: var(--blush-deep);
+  flex-shrink: 0;
+  margin-top: 3px;
+}
+
+.ec-refer-steps p {
+  margin: 0.2rem 0 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+@media (max-width: 860px) {
+  .ec-request-layout,
+  .ec-track-shell,
+  .ec-refer-layout {
     grid-template-columns: 1fr;
   }
 }

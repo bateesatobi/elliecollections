@@ -6,6 +6,7 @@ import { useCurrency } from '../store/CurrencyStore';
 import { captureReferralFromUrl } from '../utils/referral';
 import { loadWishlist } from '../utils/wishlist';
 import { SHOP, whatsappHref } from '../utils/shopContact';
+import { EAST_AFRICA_MARKETS } from '../utils/markets';
 import './client.css';
 
 export function ClientLayout() {
@@ -52,7 +53,10 @@ export function ClientLayout() {
         <div className="container-wide">
           <div className="ec-header-inner">
             <Link to="/" className="ec-logo" onClick={() => setQuery('')}>
-              Ellie<em>collections</em>
+              <img src="/icon.svg" alt="" className="ec-logo-mark" width={28} height={28} />
+              <span>
+                Ellie <em>Collections</em>
+              </span>
             </Link>
 
             <form className="ec-search" onSubmit={onSearch}>
@@ -136,6 +140,7 @@ export function ClientLayout() {
             <NavLink to="/shop?kind=accessories">Accessories</NavLink>
             <NavLink to="/shop?promo=1">Promotions</NavLink>
             <NavLink to="/track">Track order</NavLink>
+            <NavLink to="/request">Request a piece</NavLink>
             <NavLink to="/wishlist">Wishlist</NavLink>
             <NavLink to="/refer">Refer a friend</NavLink>
           </nav>
@@ -159,9 +164,10 @@ export function ClientLayout() {
             <h4>Elliecollections</h4>
             <p>Feminine fashion curated for the modern woman — apparel, accessories, and beauty.</p>
             <p className="ec-footer-shop">
-              {SHOP.address}, {SHOP.location}
+              Ships across {SHOP.region} ·{' '}
+              {EAST_AFRICA_MARKETS.map((m) => m.name).join(' · ')}
               <br />
-              {SHOP.hours}
+              WhatsApp {SHOP.phoneDisplay} · {SHOP.hours}
             </p>
           </div>
           <div>
@@ -174,6 +180,7 @@ export function ClientLayout() {
           <div>
             <h4>Help</h4>
             <Link to="/track">Track order by phone</Link>
+            <Link to="/request">Request a piece</Link>
             <Link to="/size-guide">Size guide</Link>
             <Link to="/returns">Returns &amp; exchanges</Link>
             <Link to="/checkout">Checkout — phone only</Link>

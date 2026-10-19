@@ -8,6 +8,7 @@ import {
   Megaphone,
   Menu,
   MessageSquareQuote,
+  Camera,
   Package,
   Receipt,
   Ruler,
@@ -59,6 +60,10 @@ const TITLES: Record<string, { title: string; subtitle: string }> = {
     title: 'Reviews',
     subtitle: 'Approve or hide customer ratings and feedback',
   },
+  '/admin/requests': {
+    title: 'Requests',
+    subtitle: 'Client photos of pieces they want sourced',
+  },
 };
 
 const NAV = [
@@ -69,6 +74,7 @@ const NAV = [
   { to: '/admin/units', label: 'Units', icon: Ruler },
   { to: '/admin/orders', label: 'Orders', icon: Receipt },
   { to: '/admin/reviews', label: 'Reviews', icon: MessageSquareQuote },
+  { to: '/admin/requests', label: 'Requests', icon: Camera },
   { to: '/admin/users', label: 'Users', icon: Users },
   { to: '/admin/revenue', label: 'Revenue', icon: Wallet },
   { to: '/admin/disbursements', label: 'Disbursements', icon: HandCoins },

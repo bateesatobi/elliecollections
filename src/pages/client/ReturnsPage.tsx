@@ -17,7 +17,7 @@ export function ReturnsPage() {
       <p className="eyebrow">Shop with peace of mind</p>
       <h1 style={{ fontFamily: 'var(--display)', marginTop: 0 }}>Returns &amp; exchanges</h1>
       <p className="muted" style={{ maxWidth: 560 }}>
-        Fashion online should feel as safe as trying something in Kololo. If the fit isn’t right,
+        Fashion online should feel as safe as trying something in store. If the fit isn’t right,
         we’ll help you exchange or return.
       </p>
 
@@ -36,7 +36,7 @@ export function ReturnsPage() {
             <li>WhatsApp us your order ID + phone + photos of the piece.</li>
             <li>We confirm exchange (different size) or refund path.</li>
             <li>
-              Bring the item to {SHOP.address}, or arrange a pickup where we deliver.
+              Arrange a return handoff or pickup with us on WhatsApp where we deliver.
             </li>
             <li>Refunds for MoMo/card go back to the same method; cash COD refunds are cash.</li>
           </ol>
@@ -51,7 +51,7 @@ export function ReturnsPage() {
       <div className="panel" style={{ marginTop: 16 }}>
         <h2>Try before you commit</h2>
         <p className="muted">
-          Choose <strong>shop pickup</strong> at checkout and try pieces in Kololo before paying
+          Choose <strong>shop pickup</strong> at checkout and arrange a try-on with our team before paying
           cash. Or message us for size advice using our{' '}
           <Link to="/size-guide">size guide</Link>.
         </p>

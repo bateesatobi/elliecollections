@@ -4,7 +4,7 @@ import { Heart, Share2, ShoppingBag, Star } from 'lucide-react';
 import { AmzPrice, DealBadge } from './AmzPrice';
 import { useMarket } from '../store/MarketStore';
 import { getPrimaryImage } from '../utils/productImages';
-import { isInWishlist, toggleWishlist } from '../utils/wishlist';
+import { isInWishlist, toggleWishlistAndSync } from '../utils/wishlist';
 import { buildProductShareUrl, getStoredReferral, shareOrCopy } from '../utils/referral';
 import { effectiveMinOrderQty } from '../utils/pricing';
 import {
@@ -40,8 +40,10 @@ export function Stars({ rating }: { rating: number }) {
 
 export function ProductCard({ product }: { product: Product }) {
   const navigate = useNavigate();
-  const { addToCart } = useMarket();
+  const { addToCart, setProductLikesCount } = useMarket();
   const [loved, setLoved] = useState(() => isInWishlist(product.id));
+  const [likeBusy, setLikeBusy] = useState(false);
+  const likes = product.likesCount ?? 0;
   const cover = getPrimaryImage(product);
   const deliveryOffered = product.deliveryAvailable !== false;
   const deliveryMode = product.deliveryMode || 'paid';
@@ -53,8 +55,9 @@ export function ProductCard({ product }: { product: Product }) {
     product.sizes && product.sizes.length
       ? product.sizes.join(', ')
       : product.size;
+  const brandLabel = (product.brand || '').trim();
   const metaBits = [
-    product.brand || 'Elliecollections',
+    brandLabel && !/^elliecollections$/i.test(brandLabel) ? brandLabel : null,
     product.color,
     sizeLabel,
   ].filter(Boolean);
@@ -74,29 +77,66 @@ export function ProductCard({ product }: { product: Product }) {
 
   return (
     <article className="ec-product-card">
-      <Link to={`/product/${product.id}`} className="ec-product-media">
-        <DealBadge
-          priceUgx={product.priceUgx}
-          compareAtPriceUgx={product.compareAtPriceUgx}
-        />
-        <div className="ec-card-badges">
-          {isWholesale ? <span className="ec-mode-badge">Wholesale</span> : null}
-          {promoLabel ? <span className="ec-promo-badge">{promoLabel}</span> : null}
-          {hasBulk ? (
-            <span className="ec-bulk-badge">
-              −{product.bulkDiscountPercent}% from {product.bulkDiscountQty}+
-            </span>
+      <div className="ec-product-media-wrap">
+        <Link to={`/product/${product.id}`} className="ec-product-media">
+          <DealBadge
+            priceUgx={product.priceUgx}
+            compareAtPriceUgx={product.compareAtPriceUgx}
+          />
+          <div className="ec-card-badges">
+            {isWholesale ? <span className="ec-mode-badge">Wholesale</span> : null}
+            {promoLabel ? <span className="ec-promo-badge">{promoLabel}</span> : null}
+            {hasBulk ? (
+              <span className="ec-bulk-badge">
+                −{product.bulkDiscountPercent}% from {product.bulkDiscountQty}+
+              </span>
+            ) : null}
+            {hasListDiscount && !promoLabel ? (
+              <span className="ec-promo-badge">Sale</span>
+            ) : null}
+          </div>
+          {product.stock > 0 && product.stock <= 5 ? (
+            <span className="ec-stock-badge">Only {product.stock} left</span>
           ) : null}
-          {hasListDiscount && !promoLabel ? (
-            <span className="ec-promo-badge">Sale</span>
-          ) : null}
+          {product.stock <= 0 ? <span className="ec-stock-badge sold">Sold out</span> : null}
+          <img src={cover} alt={product.title} />
+        </Link>
+        <div className="ec-card-float">
+          <button
+            type="button"
+            className={`ec-icon-btn ${loved ? 'is-on' : ''}`}
+            aria-label={loved ? 'Unlike' : 'Like'}
+            disabled={likeBusy}
+            onClick={() => {
+              if (likeBusy) return;
+              setLikeBusy(true);
+              void toggleWishlistAndSync(product.id, likes)
+                .then((r) => {
+                  setLoved(r.liked);
+                  setProductLikesCount(product.id, r.likesCount);
+                })
+                .finally(() => setLikeBusy(false));
+            }}
+          >
+            <Heart size={16} fill={loved ? 'currentColor' : 'none'} />
+            {likes > 0 ? <span className="ec-like-count">{likes}</span> : null}
+          </button>
+          <button
+            type="button"
+            className="ec-icon-btn"
+            aria-label="Share"
+            onClick={() =>
+              void shareOrCopy({
+                title: product.title,
+                text: `Shop ${product.title} on Elliecollections`,
+                url: buildProductShareUrl(product.id, getStoredReferral()),
+              })
+            }
+          >
+            <Share2 size={16} />
+          </button>
         </div>
-        {product.stock > 0 && product.stock <= 5 ? (
-          <span className="ec-stock-badge">Only {product.stock} left</span>
-        ) : null}
-        {product.stock <= 0 ? <span className="ec-stock-badge sold">Sold out</span> : null}
-        <img src={cover} alt={product.title} />
-      </Link>
+      </div>
       <div className="ec-product-body">
         <div className="ec-product-meta">
           {PRODUCT_KIND_LABELS[product.kind]} · {product.category || 'Fashion'}
@@ -153,28 +193,6 @@ export function ProductCard({ product }: { product: Product }) {
                 ? 'View details'
                 : 'Add to bag'
               : 'Sold out'}
-          </button>
-          <button
-            type="button"
-            className={`ec-icon-btn ${loved ? 'is-on' : ''}`}
-            aria-label="Wishlist"
-            onClick={() => setLoved(toggleWishlist(product.id).includes(product.id))}
-          >
-            <Heart size={16} fill={loved ? 'currentColor' : 'none'} />
-          </button>
-          <button
-            type="button"
-            className="ec-icon-btn"
-            aria-label="Share"
-            onClick={() =>
-              void shareOrCopy({
-                title: product.title,
-                text: `Shop ${product.title} on Elliecollections`,
-                url: buildProductShareUrl(product.id, getStoredReferral()),
-              })
-            }
-          >
-            <Share2 size={16} />
           </button>
         </div>
       </div>

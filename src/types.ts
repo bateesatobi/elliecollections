@@ -76,6 +76,8 @@ export type Product = {
   deliveryAvailable?: boolean;
   deliveryMode?: DeliveryMode;
   deliveryPeriod?: DeliveryPeriod;
+  /** Aggregate likes — hide in UI when 0. */
+  likesCount?: number;
   createdAt: string;
   updatedAt: string;
 };
@@ -162,6 +164,19 @@ export type Order = {
   refundedUgx?: number;
   refundAmountUgx?: number;
   refundNote?: string;
+};
+
+export type PieceRequestStatus = 'open' | 'contacted' | 'closed';
+
+export type PieceRequest = {
+  id: string;
+  type: string;
+  message: string;
+  status: PieceRequestStatus;
+  imageBase64?: string;
+  contactPhone?: string;
+  contactName?: string;
+  createdAt: string;
 };
 
 export type ProductReview = {

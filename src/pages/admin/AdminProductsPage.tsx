@@ -23,6 +23,13 @@ import {
 } from '../../types';
 import { getPrimaryImage, getProductImages } from '../../utils/productImages';
 import { getPriceDisplay, listPriceFromDiscount } from '../../utils/pricing';
+import {
+  DEFAULT_SHIP_TO_CODES,
+  EAST_AFRICA_MARKETS,
+  encodeShipToCodes,
+  parseShipToCodes,
+  shipToShort,
+} from '../../utils/markets';
 import { swalConfirm, swalError, swalSuccess } from '../../utils/swal';
 
 type ProductForm = Omit<Product, 'createdAt' | 'updatedAt'> & {
@@ -52,7 +59,7 @@ const emptyForm = (kind: ProductKind = 'apparel'): ProductForm => ({
   images: [],
   imageUrls: [],
   seller: 'Elliecollections',
-  location: 'Kampala',
+  location: encodeShipToCodes(DEFAULT_SHIP_TO_CODES),
   brand: 'Elliecollections',
   size: '',
   sizes: [],
@@ -120,8 +127,18 @@ function toForm(p: Product): ProductForm {
   };
 }
 
+// Keep under Firestore’s ~1 MB field after base64 (~786 KB raw).
+const MAX_PRODUCT_IMAGE_BYTES = 786_432;
+
 function filesToDataUrls(files: FileList | null): Promise<string[]> {
   if (!files?.length) return Promise.resolve([]);
+  const oversized = Array.from(files).filter((f) => f.size > MAX_PRODUCT_IMAGE_BYTES);
+  if (oversized.length) {
+    const names = oversized.map((f) => f.name).join(', ');
+    return Promise.reject(
+      new Error(`Each image must be 1 MB or smaller. Too large: ${names}`),
+    );
+  }
   const readers = Array.from(files).slice(0, 5).map(
     (file) =>
       new Promise<string>((resolve, reject) => {
@@ -424,7 +441,7 @@ export function AdminProductsPage() {
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search title, brand, category, location…"
+            placeholder="Search title, brand, category, country…"
             aria-label="Search products"
           />
           {search ? (
@@ -437,7 +454,7 @@ export function AdminProductsPage() {
 
       <AdminDrawer
         open={!!editing}
-        wide
+        xl
         title={
           editing && products.some((p) => p.id === editing.id)
             ? 'Update product'
@@ -458,8 +475,10 @@ export function AdminProductsPage() {
         }
       >
         {editing && (
-          <form id="admin-product-form" onSubmit={onSave}>
-            <div className="admin-form-grid">
+          <form id="admin-product-form" className="admin-product-form" onSubmit={onSave}>
+            <section className="admin-form-section">
+              <h4>Basics</h4>
+              <div className="admin-form-grid">
               <div className="field">
                 <label>Title</label>
                 <input
@@ -518,6 +537,12 @@ export function AdminProductsPage() {
                   <small className="muted">No units — create one under Units.</small>
                 )}
               </div>
+              </div>
+            </section>
+
+            <section className="admin-form-section">
+              <h4>Pricing &amp; stock</h4>
+              <div className="admin-form-grid">
               <div className="field">
                 <label>Price (UGX)</label>
                 <input
@@ -692,6 +717,12 @@ export function AdminProductsPage() {
                   onChange={(e) => setEditing({ ...editing, stock: Number(e.target.value) })}
                 />
               </div>
+              </div>
+            </section>
+
+            <section className="admin-form-section">
+              <h4>Details &amp; delivery</h4>
+              <div className="admin-form-grid">
               <div className="field">
                 <label>Brand name</label>
                 <input
@@ -762,12 +793,51 @@ export function AdminProductsPage() {
                   placeholder="Blush, ivory…"
                 />
               </div>
-              <div className="field">
-                <label>Location</label>
-                <input
-                  value={editing.location}
-                  onChange={(e) => setEditing({ ...editing, location: e.target.value })}
-                />
+              <div className="field" style={{ gridColumn: '1 / -1' }}>
+                <label>Ships to (countries)</label>
+                <p className="muted" style={{ margin: '0 0 8px', fontSize: 12 }}>
+                  Like Walmart — list countries, not cities. Customers across East Africa see
+                  availability for their market.
+                </p>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
+                  {EAST_AFRICA_MARKETS.map((m) => {
+                    const selected = parseShipToCodes(editing.location);
+                    const checked = selected.includes(m.code);
+                    return (
+                      <label
+                        key={m.code}
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: 6,
+                          border: '1px solid var(--line, #e8dfe1)',
+                          padding: '6px 10px',
+                          background: checked ? 'var(--blush-soft, #f3e6e6)' : '#fff',
+                          cursor: 'pointer',
+                          fontSize: 13,
+                          fontWeight: 600,
+                        }}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          onChange={() => {
+                            const next = checked
+                              ? selected.filter((c) => c !== m.code)
+                              : [...selected, m.code];
+                            setEditing({
+                              ...editing,
+                              location: encodeShipToCodes(
+                                next.length ? next : DEFAULT_SHIP_TO_CODES,
+                              ),
+                            });
+                          }}
+                        />
+                        {m.flag} {m.name}
+                      </label>
+                    );
+                  })}
+                </div>
               </div>
               <div className="field">
                 <label>Offer delivery</label>
@@ -856,58 +926,50 @@ export function AdminProductsPage() {
                   </label>
                 </div>
               </div>
-            </div>
-
-            <div className="field">
-              <label>Product images</label>
-              <input
-                type="file"
-                accept="image/*"
-                multiple
-                onChange={(e) => void onUploadFiles(e.target.files)}
-              />
-              <small className="muted">Upload up to 5 photos.</small>
-            </div>
-            {editing.images.length > 0 && (
-              <div className="chip-row" style={{ marginBottom: 12, flexWrap: 'wrap' }}>
-                {editing.images.map((src, idx) => (
-                  <div key={`${idx}-${src.slice(0, 24)}`} style={{ position: 'relative' }}>
-                    <img
-                      src={src}
-                      alt=""
-                      style={{
-                        width: 64,
-                        height: 64,
-                        objectFit: 'cover',
-                        borderRadius: 8,
-                        border: '1px solid #ddd',
-                      }}
-                    />
-                    <button
-                      type="button"
-                      className="btn btn-ghost"
-                      style={{ display: 'block', fontSize: 12, padding: '2px 6px' }}
-                      onClick={() =>
-                        setEditing({
-                          ...editing,
-                          images: editing.images.filter((_, i) => i !== idx),
-                        })
-                      }
-                    >
-                      Remove
-                    </button>
-                  </div>
-                ))}
               </div>
-            )}
+            </section>
 
-            <div className="field">
-              <label>Description</label>
-              <textarea
-                value={editing.description}
-                onChange={(e) => setEditing({ ...editing, description: e.target.value })}
-              />
-            </div>
+            <section className="admin-form-section">
+              <h4>Photos &amp; story</h4>
+              <label className="admin-photo-drop">
+                <input
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  onChange={(e) => void onUploadFiles(e.target.files)}
+                />
+                <strong>Add product photos</strong>
+                <span>Up to 5 images · 1 MB each · tap to browse</span>
+              </label>
+              {editing.images.length > 0 && (
+                <div className="admin-photo-row">
+                  {editing.images.map((src, idx) => (
+                    <div key={`${idx}-${src.slice(0, 24)}`} className="admin-photo-chip">
+                      <img src={src} alt="" />
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setEditing({
+                            ...editing,
+                            images: editing.images.filter((_, i) => i !== idx),
+                          })
+                        }
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <div className="field">
+                <label>Description</label>
+                <textarea
+                  rows={5}
+                  value={editing.description}
+                  onChange={(e) => setEditing({ ...editing, description: e.target.value })}
+                />
+              </div>
+            </section>
           </form>
         )}
       </AdminDrawer>
@@ -920,6 +982,7 @@ export function AdminProductsPage() {
               <th>Kind</th>
               <th>Price</th>
               <th>Stock</th>
+              <th>Likes</th>
               <th>Status</th>
               <th style={{ width: 56 }}>Actions</th>
             </tr>
@@ -927,7 +990,7 @@ export function AdminProductsPage() {
           <tbody>
             {list.length === 0 ? (
               <tr>
-                <td colSpan={6}>
+                <td colSpan={7}>
                   <div className="empty">
                     {search.trim()
                       ? `No products match “${search.trim()}”.`
@@ -939,6 +1002,7 @@ export function AdminProductsPage() {
               pageItems.map((p) => {
                 const img = cover(p);
                 const isPhoto = img.startsWith('http') || img.startsWith('data:');
+                const likes = p.likesCount ?? 0;
                 return (
                   <tr key={p.id}>
                     <td>
@@ -951,7 +1015,7 @@ export function AdminProductsPage() {
                         <div>
                           <strong>{p.title}</strong>
                           <div className="muted">
-                            {p.category} · {p.location}
+                            {p.category} · {shipToShort(p.location)}
                           </div>
                         </div>
                       </div>
@@ -969,6 +1033,7 @@ export function AdminProductsPage() {
                       </div>
                     </td>
                     <td>{p.stock}</td>
+                    <td>{likes > 0 ? likes.toLocaleString() : '—'}</td>
                     <td>
                       <span className={`badge ${p.active ? 'badge-green' : 'badge-muted'}`}>
                         {p.active ? 'active' : 'hidden'}
@@ -1096,6 +1161,14 @@ export function AdminProductsPage() {
                 <span className="admin-detail-label">Stock</span>
                 <div className="admin-detail-value">{viewing.stock.toLocaleString()}</div>
               </div>
+              {(viewing.likesCount ?? 0) > 0 ? (
+                <div>
+                  <span className="admin-detail-label">Likes</span>
+                  <div className="admin-detail-value">
+                    {(viewing.likesCount ?? 0).toLocaleString()}
+                  </div>
+                </div>
+              ) : null}
               <div>
                 <span className="admin-detail-label">Brand</span>
                 <div className="admin-detail-value">{viewing.brand || 'Elliecollections'}</div>
@@ -1134,8 +1207,8 @@ export function AdminProductsPage() {
                 </div>
               </div>
               <div>
-                <span className="admin-detail-label">Ships from</span>
-                <div className="admin-detail-value">{viewing.location || '—'}</div>
+                <span className="admin-detail-label">Ships to</span>
+                <div className="admin-detail-value">{shipToShort(viewing.location)}</div>
               </div>
               <div>
                 <span className="admin-detail-label">Delivery</span>

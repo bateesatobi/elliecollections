@@ -22,10 +22,8 @@ export function TrustStrip({ compact = false }: Props) {
         <div className="ec-trust-item">
           <MapPin size={20} strokeWidth={1.75} aria-hidden />
           <div>
-            <strong>Collect in Kololo</strong>
-            <span>
-              {SHOP.address} · {SHOP.hours.split('·')[0].trim()}
-            </span>
+            <strong>Ships across East Africa</strong>
+            <span>{SHOP.marketsLabel}</span>
           </div>
         </div>
         <div className="ec-trust-item">

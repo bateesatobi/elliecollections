@@ -6,8 +6,13 @@ import { PromoBanner } from '../../components/PromoBanner';
 import { Seo } from '../../components/Seo';
 import { useMarket } from '../../store/MarketStore';
 import { PRODUCT_KIND_LABELS, type ProductKind } from '../../types';
+import { EAST_AFRICA_MARKETS, productShipsToCountry } from '../../utils/markets';
+import {
+  diversifyByCategory,
+  recommendProducts,
+} from '../../utils/recommendations';
 
-type SortKey = 'featured' | 'price-asc' | 'price-desc' | 'newest';
+type SortKey = 'featured' | 'for-you' | 'price-asc' | 'price-desc' | 'newest';
 
 export function ShopPage() {
   const { products } = useMarket();
@@ -19,6 +24,7 @@ export function ShopPage() {
   const promoOnly = params.get('promo') === '1';
   const brand = params.get('brand') ?? '';
   const color = params.get('color') ?? '';
+  const country = (params.get('country') ?? '').toUpperCase();
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
   const [searchDraft, setSearchDraft] = useState(q);
 
@@ -58,6 +64,7 @@ export function ShopPage() {
       .filter((p) => (promoOnly ? p.onPromotion || !!p.badge || !!p.discountPercent : true))
       .filter((p) => (brand ? (p.brand || '').toLowerCase() === brand.toLowerCase() : true))
       .filter((p) => (color ? (p.color || '').toLowerCase() === color.toLowerCase() : true))
+      .filter((p) => (country ? productShipsToCountry(p.location, country) : true))
       .filter((p) => {
         const s = q.trim().toLowerCase();
         if (!s) return true;
@@ -79,10 +86,21 @@ export function ShopPage() {
     else if (sort === 'price-desc') rows.sort((a, b) => b.priceUgx - a.priceUgx);
     else if (sort === 'newest')
       rows.sort((a, b) => +new Date(b.createdAt) - +new Date(a.createdAt));
-    else rows.sort((a, b) => Number(b.featured) - Number(a.featured));
+    else if (sort === 'for-you') {
+      const ranked = recommendProducts(rows, { limit: rows.length || 1 });
+      const rankedIds = new Set(ranked.map((p) => p.id));
+      rows = [...ranked, ...rows.filter((p) => !rankedIds.has(p.id))];
+    } else {
+      // Default: featured first, then category-diverse mix so all-products
+      // doesn't clump one niche (apparel-only, bags-only, etc.).
+      rows.sort((a, b) => Number(b.featured) - Number(a.featured));
+      const featured = rows.filter((p) => p.featured);
+      const rest = diversifyByCategory(rows.filter((p) => !p.featured));
+      rows = [...featured, ...rest];
+    }
 
     return rows;
-  }, [products, kind, q, sort, inStockOnly, promoOnly, brand, color]);
+  }, [products, kind, q, sort, inStockOnly, promoOnly, brand, color, country]);
 
   const patch = (key: string, value: string | null) => {
     const n = new URLSearchParams(params);
@@ -174,12 +192,27 @@ export function ShopPage() {
         </label>
       ) : null}
       <label className="field" style={{ marginTop: '0.5rem' }}>
+        <span>Ships to</span>
+        <select
+          value={country}
+          onChange={(e) => patch('country', e.target.value || null)}
+        >
+          <option value="">All East Africa</option>
+          {EAST_AFRICA_MARKETS.map((m) => (
+            <option key={m.code} value={m.code}>
+              {m.flag} {m.name}
+            </option>
+          ))}
+        </select>
+      </label>
+      <label className="field" style={{ marginTop: '0.5rem' }}>
         <span>Sort</span>
         <select
           value={sort}
           onChange={(e) => patch('sort', e.target.value === 'featured' ? null : e.target.value)}
         >
-          <option value="featured">Featured</option>
+          <option value="featured">Featured · mixed</option>
+          <option value="for-you">For you</option>
           <option value="price-asc">Price: low to high</option>
           <option value="price-desc">Price: high to low</option>
           <option value="newest">Newest</option>

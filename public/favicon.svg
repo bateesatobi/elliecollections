@@ -1,5 +1,16 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
-  <rect width="64" height="64" rx="14" fill="#1C1418"/>
-  <path d="M32 14c-6 8-14 12-14 22a14 14 0 0028 0c0-10-8-14-14-22z" fill="#D4A5A5"/>
-  <circle cx="32" cy="40" r="4" fill="#B8956C"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Ellie Collections">
+  <!-- Soft blush disc — discreet mark -->
+  <circle cx="32" cy="32" r="30" fill="#F3E6E6"/>
+  <circle cx="32" cy="32" r="28" fill="none" stroke="#D4A5A5" stroke-width="1.25" opacity="0.85"/>
+  <!-- Quiet monogram E -->
+  <path
+    d="M22 20.5h20.5M22 32h16.5M22 43.5h20.5M22 20.5v23"
+    fill="none"
+    stroke="#8B4D5C"
+    stroke-width="2.75"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+  <!-- Tiny gold accent dot -->
+  <circle cx="44.5" cy="20.5" r="1.6" fill="#B8956C"/>
 </svg>

@@ -1,6 +1,6 @@
 {
-  "name": "Elliecollections",
-  "short_name": "Elliecollections",
+  "name": "Ellie Collections",
+  "short_name": "Ellie",
   "description": "Feminine fashion for the modern woman — apparel, accessories, and everyday luxury.",
   "start_url": "/",
   "display": "standalone",
@@ -13,6 +13,12 @@
       "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "any"
+    },
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
     }
   ]
 }

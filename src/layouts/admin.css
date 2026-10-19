@@ -633,6 +633,93 @@
   width: min(640px, 100%);
 }
 
+.admin-drawer-panel.xl {
+  width: min(980px, 100%);
+}
+
+.admin-product-form {
+  display: grid;
+  gap: 1.1rem;
+  overflow: visible;
+}
+
+.admin-form-section {
+  background: #fff;
+  border: 1px solid var(--admin-line);
+  border-radius: 16px;
+  padding: 1rem 1.1rem 1.15rem;
+  display: grid;
+  gap: 0.9rem;
+  overflow: visible;
+}
+
+.admin-form-section h4 {
+  margin: 0;
+  font-family: var(--display);
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: var(--admin-ink);
+}
+
+.admin-photo-drop {
+  position: relative;
+  display: grid;
+  gap: 0.2rem;
+  justify-items: start;
+  border: 1px dashed #d4b8bd;
+  background: var(--admin-rose);
+  padding: 1.15rem 1.2rem;
+  cursor: pointer;
+  overflow: visible;
+}
+
+.admin-photo-drop input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.admin-photo-drop strong {
+  font-size: 0.95rem;
+}
+
+.admin-photo-drop span {
+  font-size: 0.8rem;
+  color: var(--admin-muted);
+}
+
+.admin-photo-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+}
+
+.admin-photo-chip {
+  width: 88px;
+}
+
+.admin-photo-chip img {
+  width: 88px;
+  height: 88px;
+  object-fit: cover;
+  border: 1px solid var(--admin-line);
+  border-radius: 10px;
+  display: block;
+}
+
+.admin-photo-chip button {
+  display: block;
+  width: 100%;
+  margin-top: 4px;
+  border: 0;
+  background: transparent;
+  color: #a33b4a;
+  font-size: 0.72rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
 .admin-drawer-head {
   display: flex;
   justify-content: space-between;

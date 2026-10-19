@@ -132,6 +132,7 @@ type ChromeProps = {
   onClose: () => void;
   children: ReactNode;
   wide?: boolean;
+  xl?: boolean;
   footer?: ReactNode;
 };
 
@@ -170,7 +171,7 @@ export function AdminModal({ open, title, onClose, children, wide, footer }: Chr
   );
 }
 
-export function AdminDrawer({ open, title, onClose, children, wide, footer }: ChromeProps) {
+export function AdminDrawer({ open, title, onClose, children, wide, xl, footer }: ChromeProps) {
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
@@ -190,7 +191,7 @@ export function AdminDrawer({ open, title, onClose, children, wide, footer }: Ch
   return createPortal(
     <div className="admin-drawer-root" role="dialog" aria-modal="true" aria-label={title}>
       <button type="button" className="admin-drawer-backdrop" aria-label="Close" onClick={onClose} />
-      <div className={`admin-drawer-panel ${wide ? 'wide' : ''}`}>
+      <div className={`admin-drawer-panel ${xl ? 'xl' : wide ? 'wide' : ''}`}>
         <div className="admin-drawer-head">
           <h3>{title}</h3>
           <button type="button" className="admin-modal-close" aria-label="Close" onClick={onClose}>
