@@ -6,9 +6,9 @@ import { useMarket } from '../../store/MarketStore';
 import { useCurrency } from '../../store/CurrencyStore';
 import { SHOP, whatsappHref } from '../../utils/shopContact';
 import { validateMobilePhone } from '../../utils/phone';
+import { BRAND_SIGNIN } from '../../utils/brandImages';
 
-const SIGNIN_VISUAL =
-  'https://images.unsplash.com/photo-1483985988355-763728e1935b?auto=format&fit=crop&w=1400&q=80';
+const SIGNIN_VISUAL = BRAND_SIGNIN;
 
 function isoFromCurrency(code: string) {
   const map: Record<string, string> = {

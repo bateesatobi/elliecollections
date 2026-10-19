@@ -1,10 +1,10 @@
 import { Helmet } from 'react-helmet-async';
+import { BRAND_HERO } from '../utils/brandImages';
 
 const SITE_NAME = 'Elliecollections';
 const DEFAULT_DESCRIPTION =
   'Shop feminine fashion at Elliecollections — apparel, accessories, and everyday luxury curated for her. Soft silhouettes, refined pieces, delivery across East Africa.';
-const DEFAULT_IMAGE =
-  'https://images.unsplash.com/photo-1483985988355-763728e1935b?auto=format&fit=crop&w=1200&q=80';
+const DEFAULT_IMAGE = BRAND_HERO.replace('w=1600', 'w=1200');
 
 function siteOrigin(): string {
   const fromEnv = import.meta.env.VITE_SITE_URL as string | undefined;

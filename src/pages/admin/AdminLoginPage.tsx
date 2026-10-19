@@ -9,10 +9,10 @@ import {
   swalError,
   swalSuccess,
 } from '../../utils/swal';
+import { BRAND_ADMIN_LOGIN } from '../../utils/brandImages';
 import '../../layouts/admin.css';
 
-const LOGIN_IMAGE =
-  'https://images.unsplash.com/photo-1469334031218-e382a71b716b?auto=format&fit=crop&w=1400&q=80';
+const LOGIN_IMAGE = BRAND_ADMIN_LOGIN;
 
 export function AdminLoginPage() {
   const { admin, loginAdmin } = useMarket();

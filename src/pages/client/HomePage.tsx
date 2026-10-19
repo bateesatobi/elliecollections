@@ -23,15 +23,17 @@ import {
   heroSpotlight,
   recommendProducts,
 } from '../../utils/recommendations';
+import {
+  BRAND_ACCESSORIES,
+  BRAND_APPAREL,
+  BRAND_HERO,
+} from '../../utils/brandImages';
 import type { Product } from '../../types';
 import './home.css';
 
-const HERO_IMAGE =
-  'https://images.unsplash.com/photo-1483985988355-763728e1935b?auto=format&fit=crop&w=1600&q=80';
-const APPAREL_IMAGE =
-  'https://images.unsplash.com/photo-1490481651871-ab68de25d43d?auto=format&fit=crop&w=900&q=80';
-const ACCESSORIES_IMAGE =
-  'https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?auto=format&fit=crop&w=900&q=80';
+const HERO_IMAGE = BRAND_HERO;
+const APPAREL_IMAGE = BRAND_APPAREL;
+const ACCESSORIES_IMAGE = BRAND_ACCESSORIES;
 
 const DEPARTMENTS = [
   { to: '/shop?kind=apparel', label: 'Apparel', Icon: Shirt },

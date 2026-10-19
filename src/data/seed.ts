@@ -1,4 +1,5 @@
 import type { Order, Product, User } from '../types';
+import { SEED_IMG } from '../utils/brandImages';
 
 /** Demo fixtures — live catalogue comes from the API. */
 export const SEED_PRODUCTS: Product[] = [
@@ -14,9 +15,7 @@ export const SEED_PRODUCTS: Product[] = [
     unit: 'pc',
     stock: 18,
     imageEmoji: '👗',
-    images: [
-      'https://images.unsplash.com/photo-1595777457583-95e059d581b8?auto=format&fit=crop&w=800&q=80',
-    ],
+    images: [SEED_IMG.dress],
     seller: 'Elliecollections',
     location: 'Uganda, Kenya, Tanzania, Rwanda, South Sudan, DR Congo',
     featured: true,
@@ -39,9 +38,7 @@ export const SEED_PRODUCTS: Product[] = [
     unit: 'pc',
     stock: 24,
     imageEmoji: '👚',
-    images: [
-      'https://images.unsplash.com/photo-1564257631407-4deb1f99d992?auto=format&fit=crop&w=800&q=80',
-    ],
+    images: [SEED_IMG.blouse],
     seller: 'Elliecollections',
     location: 'Uganda, Kenya, Tanzania, Rwanda, South Sudan, DR Congo',
     featured: true,
@@ -64,9 +61,7 @@ export const SEED_PRODUCTS: Product[] = [
     unit: 'pc',
     stock: 15,
     imageEmoji: '👖',
-    images: [
-      'https://images.unsplash.com/photo-1506629082955-511b1aa782c0?auto=format&fit=crop&w=800&q=80',
-    ],
+    images: [SEED_IMG.trousers],
     seller: 'Elliecollections',
     location: 'Uganda, Kenya, Tanzania, Rwanda, South Sudan, DR Congo',
     featured: false,
@@ -89,9 +84,7 @@ export const SEED_PRODUCTS: Product[] = [
     unit: 'set',
     stock: 10,
     imageEmoji: '✨',
-    images: [
-      'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=800&q=80',
-    ],
+    images: [SEED_IMG.coord],
     seller: 'Elliecollections',
     location: 'Uganda, Kenya, Tanzania, Rwanda, South Sudan, DR Congo',
     featured: true,
@@ -114,9 +107,7 @@ export const SEED_PRODUCTS: Product[] = [
     unit: 'pc',
     stock: 20,
     imageEmoji: '👜',
-    images: [
-      'https://images.unsplash.com/photo-1584917865442-de89df76afd3?auto=format&fit=crop&w=800&q=80',
-    ],
+    images: [SEED_IMG.bag],
     seller: 'Elliecollections',
     location: 'Uganda, Kenya, Tanzania, Rwanda, South Sudan, DR Congo',
     featured: true,
@@ -138,9 +129,7 @@ export const SEED_PRODUCTS: Product[] = [
     unit: 'pair',
     stock: 40,
     imageEmoji: '💍',
-    images: [
-      'https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?auto=format&fit=crop&w=800&q=80',
-    ],
+    images: [SEED_IMG.jewelry],
     seller: 'Elliecollections',
     location: 'Uganda, Kenya, Tanzania, Rwanda, South Sudan, DR Congo',
     featured: false,
@@ -162,9 +151,7 @@ export const SEED_PRODUCTS: Product[] = [
     unit: 'pair',
     stock: 12,
     imageEmoji: '👠',
-    images: [
-      'https://images.unsplash.com/photo-1543163521-1bf539c55dd2?auto=format&fit=crop&w=800&q=80',
-    ],
+    images: [SEED_IMG.heels],
     seller: 'Elliecollections',
     location: 'Uganda, Kenya, Tanzania, Rwanda, South Sudan, DR Congo',
     featured: false,
@@ -187,9 +174,7 @@ export const SEED_PRODUCTS: Product[] = [
     unit: 'set',
     stock: 30,
     imageEmoji: '💄',
-    images: [
-      'https://images.unsplash.com/photo-1586495777744-4413f2103256?auto=format&fit=crop&w=800&q=80',
-    ],
+    images: [SEED_IMG.beauty],
     seller: 'Elliecollections',
     location: 'Uganda, Kenya, Tanzania, Rwanda, South Sudan, DR Congo',
     featured: false,
